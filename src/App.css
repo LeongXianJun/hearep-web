@@ -2,16 +2,26 @@
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
+.App-icon {
+  height: 18vmin;
   pointer-events: none;
 }
 
+.App-title {
+  height: 18vmin;
+  pointer-events: none;
+}
+
+.App-slogan {
+  height: 3vmin;
+  pointer-events: none;
+}
+
+/* add animation to the logo */
 @media (prefers-reduced-motion: no-preference) {
-  /* add animation to the logo
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  } */
+  .App-icon {
+    animation: App-icon-ani infinite 1s both;
+  }
 }
 
 .App-header {
@@ -29,11 +39,11 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
+@keyframes App-icon-ani {
   from {
-    transform: rotate(0deg);
+    transform: scale(1, 1);
   }
   to {
-    transform: rotate(360deg);
+    transform: scale(1.1, 1.1);
   }
 }
