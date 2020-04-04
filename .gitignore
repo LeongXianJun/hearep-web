@@ -5,6 +5,9 @@
 /.pnp
 .pnp.js
 
+# view dump file
+/src/view/dump
+
 # testing
 /coverage
 

@@ -1,0 +1,49 @@
+.App {
+  text-align: center;
+}
+
+.App-icon {
+  height: 18vmin;
+  pointer-events: none;
+}
+
+.App-title {
+  height: 18vmin;
+  pointer-events: none;
+}
+
+.App-slogan {
+  height: 3vmin;
+  pointer-events: none;
+}
+
+/* add animation to the logo */
+@media (prefers-reduced-motion: no-preference) {
+  .App-icon {
+    animation: App-icon-ani infinite 1s both;
+  }
+}
+
+.App-body {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-icon-ani {
+  from {
+    transform: scale(1, 1);
+  }
+  to {
+    transform: scale(1.1, 1.1);
+  }
+}

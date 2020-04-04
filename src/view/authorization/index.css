@@ -1,7 +1,3 @@
-.App {
-  text-align: center;
-}
-
 .App-icon {
   height: 18vmin;
   pointer-events: none;
@@ -22,21 +18,6 @@
   .App-icon {
     animation: App-icon-ani infinite 1s both;
   }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
 }
 
 @keyframes App-icon-ani {
