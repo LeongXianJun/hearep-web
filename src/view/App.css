@@ -2,25 +2,41 @@
   text-align: center;
 }
 
-.App-icon {
-  height: 18vmin;
-  pointer-events: none;
-}
-
-.App-title {
-  height: 18vmin;
-  pointer-events: none;
-}
-
-.App-slogan {
-  height: 3vmin;
-  pointer-events: none;
-}
-
 /* add animation to the logo */
 @media (prefers-reduced-motion: no-preference) {
   .App-icon {
     animation: App-icon-ani infinite 1s both;
+  }
+}
+
+@media (min-width: 300px) {
+  .App-icon {
+    height: 30vmin;
+  }
+
+  .App-title {
+    height: 24vmin;
+  }
+  
+  .App-slogan {
+    height: 5vmin;
+  }
+}
+
+@media (min-width: 600px) {
+  .App-icon {
+    height: 18vmin;
+    pointer-events: none;
+  }
+  
+  .App-title {
+    height: 18vmin;
+    pointer-events: none;
+  }
+  
+  .App-slogan {
+    height: 3vmin;
+    pointer-events: none;
   }
 }
 
