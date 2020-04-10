@@ -6,6 +6,7 @@ import UserConnection from '../connections/UserConnection'
 // pages
 const Dashboard = loadable(() => import('./Dashboard'))
 const MissingPage = loadable(() => import('./MissingPage'))
+const PatientDetailPage = loadable(() => import('./patient/detail'))
 const PatientPage = loadable(() => import('./patient/index'))
 const AuthorizationPage = loadable(() => import('./authorization/index'))
 const UpdateProfileDetailPage = loadable(() => import('./profile/update'))
@@ -19,6 +20,11 @@ const routes: RoutePair[] = [
   {
     path: '/dashboard',
     page: <Dashboard/>
+    // will be dashboard
+  },
+  {
+    path: '/patient/detail',
+    page: <PatientDetailPage/>
     // will be dashboard
   },
   {

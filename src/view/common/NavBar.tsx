@@ -1,10 +1,12 @@
 import React from 'react'
 import { NavLink, useHistory } from 'react-router-dom'
 import { Avatar, Typography, useMediaQuery, Container } from '@material-ui/core'
+import UC from '../../connections/UserConnection'
 
 import icon from '../../resources/logo/icon.svg'
 import title from '../../resources/logo/title.svg'
 import maleAvatar from '../../resources/images/maleAvatar.png'
+import femaleAvatar from '../../resources/images/femaleAvatar.png'
 
 import './navbar.css'
 
@@ -23,8 +25,9 @@ const links: LinkRoute[] =  [
 
 export default function NavBar() {
   const history = useHistory()
+  const user = UC.currentUser
   const renderNavLinkLists = (): JSX.Element[]  => 
-    links.map(link => renderNavLink(link, link.path === history.location.pathname))
+    links.map(link => renderNavLink(link, history.location.pathname.includes(link.path)))
 
   const renderNavLink = ({path, name}: LinkRoute, isCurrent: boolean): JSX.Element => (
     isCurrent
@@ -47,8 +50,8 @@ export default function NavBar() {
           </nav>
           <div className='leftBar'>
             <NavLink className='navitem' to='/profile'>
-              <Typography style={{display: useMediaQuery('(min-width: 600px')? 'flex': 'none'}}>{'Leong Xian Jun'}</Typography>
-              <Avatar src={maleAvatar} style={{marginLeft: 10}}/>
+              <Typography style={{display: useMediaQuery('(min-width: 600px')? 'flex': 'none'}}>{user?.username}</Typography>
+              <Avatar src={user?.detail?.gender === 'F'? femaleAvatar: maleAvatar} style={{marginLeft: 10}}/>
             </NavLink>
           </div>
         </div>

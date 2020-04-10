@@ -9,6 +9,7 @@ import UC, { User } from '../../connections/UserConnection'
 
 import maleAvatar from '../../resources/images/maleAvatar.png'
 import femaleAvatar from '../../resources/images/femaleAvatar.png'
+import { useHistory } from 'react-router-dom'
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -21,16 +22,18 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 )
 
-export default function Dashboard() {
+export default function PatientPage() {
   const theme = useTheme()
   const styles = useStyles()
+  const history = useHistory()
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const [ filter, setFilter ] = useState('')
   const [ open, setOpen ] = useState(false)
   const [ emergency, setEmergency ] = useState(false)
 
   const requestAuthentication = () => {
-    // setOpen(false)
+    setOpen(false)
+    history.push('/patient/detail')
   }
 
   return(
@@ -52,7 +55,7 @@ export default function Dashboard() {
         fullWidth
       />
       {/* Patient Box */}
-      { PatientList(UC.mockUserDB.filter(u => u.username.includes(filter) || u.detail?.fullname.includes(filter))) }
+      { PatientList(UC.mockUserDB.filter(u => u.type === 'patient' && u.username.includes(filter))) }
       <Dialog open={open} onClose={() => setOpen(false)} fullScreen={fullScreen}>
         <DialogTitle>Attention</DialogTitle>
         <DialogContent>
@@ -95,9 +98,14 @@ export default function Dashboard() {
   function PatientBox(patient: User) {
     const {detail} = patient
   
+    const onClick = () => {
+      setOpen(true)
+      UC.selectedPatient = patient
+    }
+
     return (
       <Grid key={patient.username} item xs={6} sm={4} md={3} lg={2}>
-        <ButtonBase onClick={() => setOpen(true)}>
+        <ButtonBase onClick={onClick}>
           <Card>
             <img style={{ margin: 'auto', display: 'block', maxWidth: '100%', maxHeight: '100%' }} alt='num' src={detail?.gender === 'F'? femaleAvatar: maleAvatar}/>
             <CardContent>
