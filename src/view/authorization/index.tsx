@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container, Typography, TextField, Button, Grid, Tabs, Tab, useTheme, Paper } from '@material-ui/core'
-import UserConnection from '../../connections/UserConnection'
+import UC from '../../connections/UserConnection'
 import { useHistory } from 'react-router-dom'
 
 import SwipeableViews from 'react-swipeable-views'
@@ -113,7 +113,7 @@ function Login() {
   const [password, setPassword] = React.useState('')
   const [result, setR] = React.useState('')
 
-  const submit = () => UserConnection.authenticate(username, password)
+  const submit = () => UC.authenticate(username, password)
     .then(res => setR(res))
     .catch(err => setR(err.message))
 
@@ -162,7 +162,7 @@ function Register() {
     resolve(password === confirm)
   }).then(result => {
     if(result) {
-      UserConnection.register(username, email, password)
+      UC.register(username, email, password)
         .then(res => setR(res))
         .then(() => history.replace('/updateProfileDetail'))
         .catch(err => setR(err.message))
@@ -223,7 +223,7 @@ function Register() {
       <Grid item>
         <Typography>
           {result}
-          {UserConnection.userDB.map(user => user.username)}
+          {UC.userDB.map(user => user.username)}
         </Typography>
         <Button variant='contained' style={{margin: 15}} onClick={register}>Register</Button>
       </Grid>

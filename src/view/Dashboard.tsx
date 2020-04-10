@@ -23,10 +23,10 @@ export default function Dashboard() {
   const styles = useStyles()
 
   const graphs: { title: string, data: JSX.Element }[] = [
-    { title: 'Daily Appointment Handled', data: <img className={styles.img} src={NumGraph}/> },
-    { title: 'Average Consultation Time per day', data: <img className={styles.img} src={TimeGraph}/> },
-    { title: 'Average Waiting Time per day', data: <img className={styles.img} src={TimeGraph}/> },
-    { title: 'Overall Patient Satisfaction per day', data: <img className={styles.img} src={NumGraph}/>}
+    { title: 'Daily Appointment Handled', data: <img className={styles.img} alt='num' src={NumGraph}/> },
+    { title: 'Average Consultation Time per day', data: <img className={styles.img} alt='time' src={TimeGraph}/> },
+    { title: 'Average Waiting Time per day', data: <img className={styles.img} alt='time' src={TimeGraph}/> },
+    { title: 'Overall Patient Satisfaction per day', data: <img className={styles.img} alt='num' src={NumGraph}/>}
   ]
 
   return(

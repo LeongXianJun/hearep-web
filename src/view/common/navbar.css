@@ -8,19 +8,6 @@
   left: 0;
 }
 
-@media (min-width: 780px) {
-  .container, [data-css-tctv7l] {
-    width: 90%;
-  }
-}
-
-.container {
-  padding-left: 20px;
-  padding-right: 20px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 @media (max-width: 1279px) and (min-width: 600px) {
   .top {
     height: 50px;
@@ -46,8 +33,6 @@
   height: 100%;
   align-items: center;
   color: #61dafb;
-  -webkit-box-align: center;
-  -webkit-align-items: center;
 }
 
 .brand-icon {
