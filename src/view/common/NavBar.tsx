@@ -1,10 +1,10 @@
 import React from 'react'
 import { NavLink, useHistory } from 'react-router-dom'
-import { Avatar, Typography, useMediaQuery } from '@material-ui/core'
+import { Avatar, Typography, useMediaQuery, Container } from '@material-ui/core'
 
 import icon from '../../resources/logo/icon.svg'
 import title from '../../resources/logo/title.svg'
-import avatar from '../../resources/images/avatar.jpg'
+import maleAvatar from '../../resources/images/maleAvatar.png'
 
 import './navbar.css'
 
@@ -16,8 +16,8 @@ import './navbar.css'
  * --> show after login only
  */
 const links: LinkRoute[] =  [
-  { path: '/dashboard', name: 'Home' }
-  // { path: '/patient', name: 'Patient' },
+  { path: '/dashboard', name: 'Home' },
+  { path: '/patient', name: 'Patient' },
   // { path: '/appointment', name: 'Appointment' }
 ]
 
@@ -36,7 +36,7 @@ export default function NavBar() {
   
   return(
     <header className='header'>
-      <div className='container'>
+      <Container>
         <div className='top'>
           <a className='brand' href='/dashboard'>
             <img src={icon} className='brand-icon' alt='logo' height='20'/>
@@ -48,11 +48,11 @@ export default function NavBar() {
           <div className='leftBar'>
             <NavLink className='navitem' to='/profile'>
               <Typography style={{display: useMediaQuery('(min-width: 600px')? 'flex': 'none'}}>{'Leong Xian Jun'}</Typography>
-              <Avatar src={avatar} style={{marginLeft: 10}}/>
+              <Avatar src={maleAvatar} style={{marginLeft: 10}}/>
             </NavLink>
           </div>
         </div>
-      </div>
+      </Container>
     </header>
   )
 }
