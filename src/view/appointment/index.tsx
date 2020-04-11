@@ -1,21 +1,20 @@
 import React, { useState } from 'react'
-import { AppContainer, AppExpansion, AppTable } from '../common'
+import { AppContainer, AppExpansion, AppTabPanel } from '../common'
 import { TextField, InputAdornment, Typography, TableHead, CardHeader,
   Card, CardContent, Grid, Dialog, DialogTitle, 
-  DialogContent, DialogContentText, DialogActions, Button, ButtonBase, 
-  useMediaQuery, useTheme, Checkbox, FormControl, Table, TableBody, TableRow, TableCell, IconButton } from '@material-ui/core'
+  DialogContent, DialogContentText, DialogActions, Button, useMediaQuery, 
+  useTheme, Table, TableBody, TableRow, TableCell, 
+  IconButton, Paper, Tabs, Tab, Checkbox } from '@material-ui/core'
 import SearchIcon from '@material-ui/icons/Search'
 import ScheduleIcon from '@material-ui/icons/Schedule'
-import AC, { Appointment } from '../../connections/AppointmentConnection'
-import UC, { User } from '../../connections/UserConnection'
+import AC, { Appointment, FixedTime } from '../../connections/AppointmentConnection'
+import UC from '../../connections/UserConnection'
 
-import maleAvatar from '../../resources/images/maleAvatar.png'
-import femaleAvatar from '../../resources/images/femaleAvatar.png'
-import { useHistory, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+import SwipeableViews from 'react-swipeable-views'
 
 export default function AppointmentPage() {
   const theme = useTheme()
-  const history = useHistory()
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const [ filter, setFilter ] = useState('')
   const [ timeslotOpen, setTimeslotOpen ] = useState(false)
@@ -25,7 +24,7 @@ export default function AppointmentPage() {
     <AppContainer>
       <Grid container spacing={2}>
         <Grid item xs={12} md={9}>
-          <Typography variant='h2' gutterBottom>{'Appointment'}</Typography>
+          <Typography variant='h2'>{'Appointment'}</Typography>
         </Grid>
         <Grid item container xs={12} md alignContent='center' justify='center'>
           <Button variant="contained" color='primary' onClick={() => setTimeslotOpen(true)}>{'Set Appointment Timeslot'}</Button>
@@ -66,17 +65,17 @@ export default function AppointmentPage() {
               disableTypography
               title={
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={11}>
-                    <Typography variant='h4' gutterBottom>{'All Appointment'}</Typography>
+                  <Grid item xs={11}>
+                    <Typography variant='h4'>{'All Appointment'}</Typography>
                   </Grid>
-                  <Grid item container xs={12} md alignContent='center' justify='center'>
+                  <Grid item container xs alignContent='center' justify='center'>
                     <NavLink to='/appointment/history'>{'History'}</NavLink>
                   </Grid>
                 </Grid>
               }
               subheader={
                 <TextField
-                  // className={classes.margin}
+                  style={{marginTop: 10}}
                   label='Search'
                   placeholder="Please enter the patient's name"
                   InputProps={{
@@ -133,40 +132,208 @@ export default function AppointmentPage() {
   )
 
   function SetTimeslotDialog() {
+    const [value, setValue] = React.useState(0)
+  
+    const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
+      setValue(newValue);
+    }
+  
+    const handleChangeIndex = (index: number) => {
+      setValue(index);
+    }
+
+    const submit = () => {
+      setTimeslotOpen(false)
+    }
+
+    function tabProps(index: any) {
+      return {
+        id: `full-width-tab-${index}`,
+        'aria-controls': `full-width-tabpanel-${index}`,
+      };
+    }
+
     return (
-      <Dialog open={timeslotOpen} onClose={() => setTimeslotOpen(false)} fullScreen={fullScreen}>
+      <Dialog open={timeslotOpen} maxWidth='md' onClose={() => setTimeslotOpen(false)} fullScreen={fullScreen}>
         <DialogTitle>{'Set Appointment Timeslot'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={1}>
             <Grid item>
-              <Table>
-                <TableBody>
-                </TableBody>
-              </Table>
+              <Paper>
+                <Tabs
+                  value={value}
+                  onChange={handleChange}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  variant='fullWidth'
+                >
+                  <Tab label='By Time' {...tabProps(0)}/>
+                  <Tab label='By Number' {...tabProps(1)}/>
+                </Tabs>
+                <SwipeableViews
+                  containerStyle={{alignContent: 'center'}}
+                  axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
+                  index={value}
+                  disabled
+                  onChangeIndex={handleChangeIndex}
+                >
+                  {
+                    [ByTime(), ByNumber()].map((ele, index) => (
+                      <AppTabPanel key={'tp-' + index} value={value} index={index} dir={theme.direction}>
+                        { ele }
+                      </AppTabPanel>
+                    ))
+                  }
+                </SwipeableViews>
+              </Paper>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTimeslotOpen(false)}>
+          <Button onClick={() => setTimeslotOpen(false)} variant="contained" color='default'>
             Close
+          </Button>
+          <Button onClick={submit}variant="contained" color='primary'>
+            Set
           </Button>
         </DialogActions>
       </Dialog>
     )
+
+    function ByTime() {
+      const headers = ['Day', ...FixedTime]
+      const rows = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      const data: boolean[][] = rows.map(() => [...Array(FixedTime.length)].map(() => false))
+
+      const handleChange = (r: number, c: number) => (checked: boolean) => {
+        data[r][c] = checked
+      }
+
+      return (
+        <Table>
+          <TableHead>
+            <TableRow>
+              { headers.map((h, index) => <TableCell key={'th-' + index}>{h}</TableCell>) }
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            { rows.map((r, rindex) => 
+              <TableRow hover key={'tr-' + rindex}>
+                <TableCell>{r}</TableCell>
+                { FixedTime.map((ft, i) => 
+                    <TableCell key={ft + '-' + i}>
+                      <Checkbox
+                        onChange={event => handleChange(rindex, i)(event.target.checked)}
+                        inputProps={{ 'aria-label': 'primary checkbox' }}
+                      />
+                    </TableCell>
+                  )
+                }
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      )
+    }
+  
+    function ByNumber() {
+      const rows = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      const data: string[][] = rows.map(() => [...Array(2)].map(() => ''))
+      const isWorking: boolean[] = [...Array(7)].map(() => true)
+
+      const setWorking = (r: number) => (value: boolean) => {
+        isWorking[r] = value
+        console.log(r, isWorking[r])
+      }
+
+      const handleChange = (r: number, c: number) => (value: string) => {
+        data[r][c] = value
+      }
+
+      return (
+        <Table>
+          <TableBody>
+            { rows.map((r, rindex) => 
+              <TableRow hover key={'tr-' + rindex}>
+                <TableCell>
+                  <Checkbox
+                    onChange={event => setWorking(rindex)(event.target.checked)}
+                    inputProps={{ 'aria-label': 'primary checkbox' }}
+                  />
+                </TableCell>
+                <TableCell>{r}</TableCell>
+                <TableCell>
+                  <TextField
+                    variant='outlined'
+                    label="Start Time"
+                    fullWidth
+                    style={{minWidth: '100px'}}
+                    onChange = {event => handleChange(rindex, 0)(event.target.value)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    variant='outlined'
+                    label="End Time"
+                    fullWidth
+                    style={{minWidth: '100px'}}
+                    onChange = {event => handleChange(rindex, 1)(event.target.value)}
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      )
+    }
   }
 
+
   function RescheduleDialog() {
+    const headers = ['Day', ...FixedTime]
+    const rows = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const [checked, setChecked] = useState('')
+
+    const handleChange = (r: number, c: number) => (checked: boolean) => {
+      setChecked(r + '-' + c)
+      console.log(r + '-' + c, checked)
+    }
+
     const reschedule = () => {
       setRescheduledApp(undefined)
     }
 
     return (
-      <Dialog open={rescheduledApp !== undefined} onClose={() => setRescheduledApp(undefined)} fullScreen={fullScreen}>
+      <Dialog open={rescheduledApp !== undefined} onClose={() => setRescheduledApp(undefined)} maxWidth='md' fullScreen={fullScreen}>
         <DialogTitle>{'Reschedule Appointment'}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {"Please  pick another time to reschedule."}
+            {"Please pick another time to reschedule."}
           </DialogContentText>
+          <Table>
+            <TableHead>
+              <TableRow>
+                { headers.map((h, index) => <TableCell key={'th-' + index}>{h}</TableCell>) }
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              { rows.map((r, rindex) => 
+                <TableRow hover key={'tr-' + rindex}>
+                  <TableCell>{r}</TableCell>
+                  { FixedTime.map((ft, i) => 
+                      <TableCell key={ft + '-' + i}>
+                        <Checkbox
+                          checked={rindex + '-' + i === checked}
+                          onChange={event => handleChange(rindex, i)(event.target.checked)}
+                          inputProps={{ 'aria-label': 'primary checkbox' }}
+                        />
+                      </TableCell>
+                    )
+                  }
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRescheduledApp(undefined)}>

@@ -6,3 +6,6 @@ export * from './AppExpansion'
 
 export { default as AppTable } from './AppTable'
 export * from './AppTable'
+
+export { default as AppTabPanel } from './AppTabPanel'
+export * from './AppTabPanel'

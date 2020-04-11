@@ -19,6 +19,21 @@ class AppointmentConnection {
   ]
   public selectedApp: Appointment = this.appointmentDB[0]
 
+
+  public timeslots: WorkingTime[] = [
+    { 
+      id: 1, userId: 1, type: 'byTime', 
+      timeslots: [
+        { day: 'Sunday', slots: [1, 3, 5, 7, 9] },
+        { day: 'Monday', slots: [2, 3, 4, 5] },
+        { day: 'Tuesday', slots: [6, 7, 8] },
+        { day: 'Wednesday', slots: [1, 2, 3, 6, 7, 8] },
+        { day: 'Thursday', slots: [1, 3, 5, 7, 8, 10] },
+        { day: 'Friday', slots: [1, 3, 5, 7, 8, 10] },
+        { day: 'Saturday', slots: [1, 3, 5, 7, 9] }
+      ]
+    }
+  ]
 }
 
 export type Appointment = {
@@ -34,6 +49,39 @@ export type Appointment = {
   } | {
     type: 'byNumber'
     turn: number
+  }
+)
+
+export const FixedTime = [
+  '8am',
+  '9am',
+  '10am',
+  '11am',
+  '12pm',
+  '1pm',
+  '2pm',
+  '3pm',
+  '4pm',
+  '5pm',
+]
+
+export type WorkingTime = {
+  id: number
+  userId: number
+} & (
+  {
+    type: 'byTime'
+    timeslots: {
+      day: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+      slots: number[]
+    }[]
+  } | {
+    type: 'byNumber'
+    timeslots: {
+      day: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+      startTime: string
+      endTime: string
+    }[]
   }
 )
 

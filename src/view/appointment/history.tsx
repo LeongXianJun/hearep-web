@@ -1,17 +1,12 @@
 import React, { useState } from 'react'
-import { AppContainer, AppExpansion, AppTable } from '../common'
+import { AppContainer } from '../common'
 import { TextField, InputAdornment, Typography, TableHead, CardHeader,
-  Card, CardContent, Grid, Dialog, DialogTitle, 
-  DialogContent, DialogContentText, DialogActions, Button, ButtonBase, 
-  useMediaQuery, useTheme, Checkbox, FormControl, Table, TableBody, TableRow, TableCell, IconButton, Breadcrumbs } from '@material-ui/core'
+  Card, CardContent, Grid, Table, TableBody, 
+  TableRow, TableCell, Breadcrumbs } from '@material-ui/core'
 import SearchIcon from '@material-ui/icons/Search'
-import ScheduleIcon from '@material-ui/icons/Schedule'
 import AC, { Appointment } from '../../connections/AppointmentConnection'
 import RC from '../../connections/RecordConnection'
-import UC, { User } from '../../connections/UserConnection'
-
-import maleAvatar from '../../resources/images/maleAvatar.png'
-import femaleAvatar from '../../resources/images/femaleAvatar.png'
+import UC from '../../connections/UserConnection'
 import { useHistory, NavLink } from 'react-router-dom'
 
 export default function AppointmentPage() {
@@ -62,7 +57,6 @@ export default function AppointmentPage() {
           }
           subheader={
             <TextField
-              // className={classes.margin}
               label='Search'
               placeholder="Please enter the patient's name"
               InputProps={{
