@@ -4,15 +4,15 @@ class RecordConnection {
   public recordDB: Record[] = [
     { 
       id: 1, name: 'Teejay Velazquez', type: 'health prescription', date: new Date('2020-3-27'), 
-      illness: 'Type 1 Diabetes', clinicalOpinion: ''
+      illness: 'Type 1 Diabetes', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 
       id: 2, name: 'Terri Woodard', type: 'health prescription', date: new Date('2020-3-27'), 
-      illness: 'Asthma', clinicalOpinion: ''
+      illness: 'Asthma', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 
       id: 3, name: 'Leong Xian Jun', type: 'health prescription', date: new Date('2020-3-28'), appID: 5, 
-      illness: 'Sore Throat', clinicalOpinion: ''
+      illness: 'Sore Throat', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 
       id: 4, name: 'Teejay Velazquez', type: 'medication record', date: new Date('2020-3-27'), prescriptionID: 1,
@@ -55,14 +55,55 @@ class RecordConnection {
     },
     { 
       id: 11, name: 'Leong Xian Jun', type: 'health prescription', date: new Date('2020-4-16'), appID: 6, 
-      illness: 'Sore Throat', clinicalOpinion: ''
+      illness: 'Sore Throat', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 
       id: 12, name: 'Leong Xian Jun', type: 'medication record', date: new Date('2020-4-16'), prescriptionID: 11,
-      medications: []
+      medications: [
+        { medicine: 'Acetaminophen (Tylenol)', dosage: 10, usage: '2mL' },
+        { medicine: 'Ibuprofen (Advil, Motrin)', dosage: 15, usage: '3mL' },
+        { medicine: 'Aspirin', dosage: 10, usage: '2mL' }
+      ]
     },
+    { 
+      id: 13, name: 'Leong Xian Jun', type: 'medication record', date: new Date('2020-4-20'), prescriptionID: 11,
+      medications: [
+        { medicine: 'Acetaminophen (Tylenol)', dosage: 10, usage: '2mL' },
+        { medicine: 'Ibuprofen (Advil, Motrin)', dosage: 15, usage: '3mL' },
+        { medicine: 'Tuns', dosage: 15, usage: '3mL' },
+        { medicine: 'Cimetidine (Tagamet HB', dosage: 30, usage: '5mL' },
+        { medicine: 'Iansoprazole (Prevacid 24)', dosage: 25, usage: '5mL' }
+      ]
+    }
   ]
+  public selectedRecord: Record = this.recordDB[10]
 
+  public addNewHealthPrescription = (patientName: string, illness: string, clinicalOpinion: string, medicines: {medicine: string, dosage: number, usage: string}[]) => {
+    const newHP: Record = { 
+      id: this.recordDB.length, 
+      name: this.selectedRecord.name, 
+      type: 'health prescription', 
+      date: new Date(), 
+      illness: illness,
+      clinicalOpinion: clinicalOpinion
+    }
+    this.recordDB = [...this.recordDB, newHP]
+    this.addNewMedicationRecord(medicines, newHP.id)
+  }
+
+  public addNewMedicationRecord = (medicines: {medicine: string, dosage: number, usage: string}[], prescriptionID?: number) => {
+    this.recordDB = [
+      ...this.recordDB,
+      { 
+        id: this.recordDB.length, 
+        name: this.selectedRecord.name, 
+        type: 'medication record', 
+        date: new Date(), 
+        prescriptionID: prescriptionID ?? this.selectedRecord.id,
+        medications: medicines
+      }
+    ]
+  }
 }
 
 export type Record = {
@@ -79,8 +120,9 @@ export type Record = {
     type: 'medication record'
     prescriptionID: number
     medications: {
-      medecine: string
+      medicine: string
       dosage: number
+      usage: string
     } []
   } | {
     type: 'lab test result'

@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { AppContainer, AppExpansion } from '../common'
-import { makeStyles, Theme, createStyles, Card, Grid,
-  useMediaQuery, useTheme, Breadcrumbs, Link, Typography, 
-  TableBody, Table, TableRow, TableCell, CardHeader, CardContent, Button, ButtonBase } from '@material-ui/core'
+import { makeStyles, Theme, createStyles, Card, Grid, 
+  Breadcrumbs, Link, Typography, TableBody, Table, 
+  TableRow, TableCell, CardHeader, CardContent, Button } from '@material-ui/core'
 import UC, { User } from '../../connections/UserConnection'
 import AC from '../../connections/AppointmentConnection'
-import RC from '../../connections/RecordConnection'
+import RC, { Record } from '../../connections/RecordConnection'
 import { useHistory } from 'react-router-dom'
 
 import maleAvatar from '../../resources/images/maleAvatar.png'
@@ -24,10 +24,8 @@ const useStyles = makeStyles((theme: Theme) =>
 )
 
 export default function PatientDetailPage() {
-  const theme = useTheme()
   const styles = useStyles()
   const history = useHistory()
-  const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const patient = UC.selectedPatient
 
   const breadcrumbs = [
@@ -37,9 +35,19 @@ export default function PatientDetailPage() {
   ]
 
   const appointmentByNumber = AC.appointmentDB
-    .filter(a => a.name === patient?.detail?.fullname && a.consultant === UC.currentUser?.detail?.fullname)
+    .filter(a => a.name === patient?.detail?.fullname && a.medicalStaff === UC.currentUser?.detail?.fullname)
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .find(a => a.type === 'byNumber') 
+
+  const viewPrescription = (record: Record) => {
+    RC.selectedRecord = record
+    history.push('/prescription')
+  }
+
+  const viewLabTest = (record: Record) => {
+    RC.selectedRecord = record
+    history.push('/labTestResult')
+  }
 
   return(
     <AppContainer>
@@ -54,7 +62,7 @@ export default function PatientDetailPage() {
           ))
         }        
       </Breadcrumbs>
-      <Grid container direction='row' justify='center' spacing={3}>
+      <Grid container direction='row' justify='center' spacing={3} style={{marginTop: 5}}>
         <Grid item xs={12} md={6}>
           {
             patient
@@ -68,7 +76,7 @@ export default function PatientDetailPage() {
           }
           <AppExpansion
             title='Medical Prescription'
-            actions={<Button size="small">Add</Button>}
+            actions={<Button size="small" onClick={() => history.push('/prescription/add')}>Add</Button>}
           >
             <Table>
               <TableBody>
@@ -77,7 +85,7 @@ export default function PatientDetailPage() {
                     .sort((a, b) => a.date.getTime() - b.date.getTime())
                     .map((record, index) => 
                       record.type === 'health prescription'
-                      ? <TableRow key={'row-' + index} hover onClick={() => { history.push('/patient') }}>
+                      ? <TableRow key={'row-' + index} hover onClick={() => viewPrescription(record)}>
                           <TableCell>{ record.illness }</TableCell>
                           <TableCell>{ record.date.toDateString() }</TableCell>
                         </TableRow>
@@ -89,7 +97,7 @@ export default function PatientDetailPage() {
           </AppExpansion>
           <AppExpansion
             title='Lab Test Result'
-            actions={<Button size="small">Add</Button>}
+            actions={<Button size="small" onClick={() => history.push('/labTestResult/add')}>Add</Button>}
           >
             <Table>
               <TableBody>
@@ -98,7 +106,7 @@ export default function PatientDetailPage() {
                     .sort((a, b) => a.date.getTime() - b.date.getTime())
                     .map((record, index) => 
                       record.type === 'lab test result'
-                      ? <TableRow key={'row-' + index} hover onClick={() => { history.push('/patient') }}>
+                      ? <TableRow key={'row-' + index} hover onClick={() => viewLabTest(record)}>
                           <TableCell>{ record.title }</TableCell>
                           <TableCell>{ record.date.toDateString() }</TableCell>
                         </TableRow>
@@ -120,13 +128,11 @@ export default function PatientDetailPage() {
               </AppExpansion>
             : undefined
           }
-          <AppExpansion
-            title='Upcoming Appointments'
-          >
+          <AppExpansion title='Upcoming Appointments'>
             <Table>
               <TableBody>
                 {
-                  AC.appointmentDB.filter(a => a.name === patient?.detail?.fullname && a.consultant === UC.currentUser?.detail?.fullname && a.type === 'byTime')
+                  AC.appointmentDB.filter(a => a.name === patient?.detail?.fullname && a.medicalStaff === UC.currentUser?.detail?.fullname && a.type === 'byTime')
                     .sort((a, b) => a.date.getTime() - b.date.getTime())
                     .map((appointment, index) => 
                       appointment.type === 'byTime'
@@ -140,9 +146,7 @@ export default function PatientDetailPage() {
               </TableBody>
             </Table>
           </AppExpansion>
-          <AppExpansion
-            title='Health Analysis'
-          >
+          <AppExpansion title='Health Analysis'>
             <Grid container direction='column' spacing={1}>
               {
                 [

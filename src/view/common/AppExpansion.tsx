@@ -1,6 +1,6 @@
 import React from 'react'
 import { ExpansionPanel, ExpansionPanelSummary, Typography, ExpansionPanelDetails, Grid, 
-  Divider, ExpansionPanelActions, Button } from '@material-ui/core'
+  Divider, ExpansionPanelActions } from '@material-ui/core'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
 
 export default function AppExpansion(prop: AEProps) {

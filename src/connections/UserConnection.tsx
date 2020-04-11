@@ -64,9 +64,7 @@ class UserConnection {
     }
   }).then(() => 'Register Successfully')
 
-  public setDetail = () => new Promise((resolve, reject) => {
-    resolve();
-  })
+  public setDetail = () => {}
 }
 
 export type User = {

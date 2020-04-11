@@ -8,6 +8,8 @@ const Dashboard = loadable(() => import('./Dashboard'))
 const MissingPage = loadable(() => import('./MissingPage'))
 const PatientDetailPage = loadable(() => import('./patient/detail'))
 const PatientPage = loadable(() => import('./patient/index'))
+const AddPrescriptionPage = loadable(() => import('./prescription/add'))
+const PrescriptionPage = loadable(() => import('./prescription/index'))
 const AuthorizationPage = loadable(() => import('./authorization/index'))
 const UpdateProfileDetailPage = loadable(() => import('./profile/update'))
 
@@ -20,17 +22,22 @@ const routes: RoutePair[] = [
   {
     path: '/dashboard',
     page: <Dashboard/>
-    // will be dashboard
   },
   {
     path: '/patient/detail',
     page: <PatientDetailPage/>
-    // will be dashboard
   },
   {
     path: '/patient',
     page: <PatientPage/>
-    // will be dashboard
+  },
+  {
+    path: '/prescription/add',
+    page: <AddPrescriptionPage/>
+  },
+  {
+    path: '/prescription',
+    page: <PrescriptionPage/>
   },
   {
     path: '/profile/update',
@@ -39,7 +46,6 @@ const routes: RoutePair[] = [
   {
     path: '/',
     page: <MissingPage/>
-    // will be dashboard
   }
 ]
 

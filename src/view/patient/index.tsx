@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { AppContainer } from '../common'
-import { makeStyles, Theme, createStyles, TextField, InputAdornment,
+import { TextField, InputAdornment,
   Card, CardContent, Grid, Dialog, DialogTitle, 
   DialogContent, DialogContentText, DialogActions, Button, ButtonBase, 
   useMediaQuery, useTheme, Checkbox, FormControl, FormControlLabel } from '@material-ui/core'
@@ -11,20 +11,8 @@ import maleAvatar from '../../resources/images/maleAvatar.png'
 import femaleAvatar from '../../resources/images/femaleAvatar.png'
 import { useHistory } from 'react-router-dom'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    img: {
-      margin: 'auto',
-      display: 'block',
-      maxWidth: '100%',
-      maxHeight: '100%',
-    }
-  }),
-)
-
 export default function PatientPage() {
   const theme = useTheme()
-  const styles = useStyles()
   const history = useHistory()
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const [ filter, setFilter ] = useState('')
