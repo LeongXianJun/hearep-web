@@ -10,13 +10,6 @@ import femaleAvatar from '../../resources/images/femaleAvatar.png'
 
 import './navbar.css'
 
-/**
- * Got 2 modes, which is 
- * 1) Before login
- * 2) After login
- * 
- * --> show after login only
- */
 const links: LinkRoute[] =  [
   { path: '/dashboard', name: 'Home' },
   { path: '/patient', name: 'Patient' },
@@ -64,7 +57,6 @@ export default function NavBar() {
     : <NavLink key={'l' + name} className='navitem' to={path}>{name}</NavLink>
   )
 
-  
   return(
     <header className='header'>
       <Container>
