@@ -1,8 +1,9 @@
 import React from 'react'
-import { Typography, Grid, DialogTitle, TextField, 
-  makeStyles, Theme, createStyles, Button, RadioGroup, 
-  FormControlLabel, Radio, FormControl, InputLabel, Select, 
-  MenuItem, DialogContent, Dialog, DialogActions, useTheme, useMediaQuery } from '@material-ui/core'
+import { Typography, Grid, DialogTitle, TextField, makeStyles, 
+  Theme, createStyles, Button, RadioGroup, FormControlLabel, 
+  Radio, FormControl, InputLabel, Select, MenuItem, 
+  DialogContent, Dialog, DialogActions, useTheme, useMediaQuery } from '@material-ui/core'
+import UC from '../../connections/UserConnection'
 
 const useStyle = makeStyles((theme: Theme) => 
   createStyles({
@@ -30,7 +31,7 @@ export default function ProfileUpdatePage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const [fullname, setFullname] = React.useState('')
   const [age, setAge] = React.useState(0)
-  const [gender, setGender] = React.useState('male')
+  const [gender, setGender] = React.useState<'M' | 'F'>('M')
   const [altEmail, setAltEmail] = React.useState('')
   const [phoneNumber, setPhoneNumber] = React.useState('')
   const [institution, setInstitution] = React.useState('')
@@ -39,7 +40,7 @@ export default function ProfileUpdatePage() {
   const [department, setDepartment] = React.useState('')
 
   const submit = () => {
-
+    UC.updateProfileDetail({fullname, age, gender, altEmail, phoneNumber, institution, role, intAdd, department})
   }
 
   return(
@@ -48,11 +49,11 @@ export default function ProfileUpdatePage() {
         open
         fullScreen={fullScreen}
       >
-        <DialogTitle>
+        <DialogTitle disableTypography>
           <Typography variant='h4' align='left'>{'Profile Detail'}</Typography>
         </DialogTitle>
         <DialogContent>
-          <Grid xs={12} container direction='row' spacing={3}>
+          <Grid container direction='row' spacing={3}>
             <Grid item md={6} xs={12} container spacing={1} direction='column'>
               <Grid item>
                 <Typography variant='h5' align='left'>{'Basic Information'}</Typography>
@@ -77,9 +78,9 @@ export default function ProfileUpdatePage() {
                 />
                 <FormControl fullWidth className={styles.input}>
                   <Typography variant='subtitle1' align='left'>{'Gender'}</Typography>
-                  <RadioGroup row aria-label="gender" name="gender" value={gender} onChange={event => setGender(event.target.value)}>
-                    <FormControlLabel value="male" control={<Radio />} label="Male" />
-                    <FormControlLabel value="female" control={<Radio />} label="Female" />
+                  <RadioGroup row aria-label="gender" name="gender" value={gender} onChange={event => setGender(event.target.value === 'M'? 'M': 'F')}>
+                    <FormControlLabel value="M" control={<Radio />} label="Male" />
+                    <FormControlLabel value="F" control={<Radio />} label="Female" />
                   </RadioGroup>
                 </FormControl>
               </Grid>
@@ -107,7 +108,6 @@ export default function ProfileUpdatePage() {
             <Grid item md={6} xs={12} container direction='column' spacing={1} alignItems='flex-start'>
               <Typography variant='h5' align='left' noWrap>{'Working Information'}</Typography>
               <TextField
-                required
                 variant="outlined"
                 className={styles.input}
                 placeholder="Enter your Medical Institution"
@@ -118,12 +118,11 @@ export default function ProfileUpdatePage() {
               <FormControl variant="outlined" fullWidth className={styles.input}>
                 <InputLabel>Role</InputLabel>
                 <Select
-                  required
                   value={role}
                   onChange={event => setRole(event.target.value as string)}
                 >
                   {
-                    roles.map(({val, text}) => <MenuItem value={val}>{text}</MenuItem>)
+                    roles.map(({val, text}, index) => <MenuItem key={'role-' + index} value={val}>{text}</MenuItem>)
                   }
                 </Select>
               </FormControl>

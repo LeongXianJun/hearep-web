@@ -63,24 +63,23 @@ export default function App() {
   const renderRoute = (): JSX.Element[] => 
      routes.map(({path, isAuthenticationPage, page}, index) => (
       <Route key={'r-' + index} path={path}>
-        {/* {UserConnection.isLogin() === false
+        {UserConnection.isLogin() === false
           ? isAuthenticationPage
             ? page
             : <Redirect to='/login'/>
           : isAuthenticationPage // if login, then the user should not able to access authentication pages
             ? <Redirect to='/'/>
             : page
-        } */}
-        {page}
+        }
       </Route>
     ))
     
-  // const history = useHistory()
-  // useEffect(() => {
-  //   if(UserConnection.isLogin() === false) {
-  //     history.replace('/login')
-  //   }
-  // }, [history])
+  const history = useHistory()
+  useEffect(() => {
+    if(UserConnection.isLogin() === false) {
+      history.replace('/login')
+    }
+  }, [history])
 
   return(
     <Switch>

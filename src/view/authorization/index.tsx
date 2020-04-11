@@ -1,9 +1,10 @@
 import React from 'react';
-import { Box, Container, Typography, TextField, Button, Grid, Tabs, Tab, useTheme, Paper } from '@material-ui/core'
-import UC from '../../connections/UserConnection'
-import { useHistory } from 'react-router-dom'
-
+import { Box, Container, Typography, TextField, Button, 
+  Grid, Tabs, Tab, useTheme, Paper } from '@material-ui/core'
 import SwipeableViews from 'react-swipeable-views'
+import { useHistory } from 'react-router-dom'
+import UC from '../../connections/UserConnection'
+
 import icon from '../../resources/logo/icon.svg'
 import title from '../../resources/logo/title.svg'
 import slogan from '../../resources/logo/slogan.svg'
@@ -42,8 +43,9 @@ function tabProps(index: any) {
 }
 
 export default function AuthorizationPage() {
-  const theme = useTheme();
-  const [value, setValue] = React.useState(0);
+  const theme = useTheme()
+  const history = useHistory()
+  const [value, setValue] = React.useState(0)
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);
@@ -114,6 +116,7 @@ export default function AuthorizationPage() {
   
     const submit = () => UC.authenticate(username, password)
       .then(res => setR(res))
+      .then(() => history.replace('/dashboard'))
       .catch(err => setR(err.message))
   
     return (
@@ -153,8 +156,6 @@ export default function AuthorizationPage() {
     const [password, setPassword] = React.useState('')
     const [confirm, setConfirm] = React.useState('')
     const [result, setR] = React.useState('')
-  
-    const history = useHistory()
   
     const register = () => new Promise<boolean>((resolve, reject) => {
       // password regex checking
@@ -222,7 +223,6 @@ export default function AuthorizationPage() {
         <Grid item>
           <Typography>
             {result}
-            {UC.userDB.map(user => user.username)}
           </Typography>
           <Button variant='contained' style={{margin: 15}} onClick={register}>Register</Button>
         </Grid>
