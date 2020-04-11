@@ -25,7 +25,7 @@ const roles = [
   { val: 'staff', text: 'Support Staff' }
 ]
 
-export default function ProfileUpdatePage() {
+export default function ProfileUpdatePage(props: ProfileUpdateProps) {
   const theme = useTheme()
   const styles = useStyle()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
@@ -39,14 +39,19 @@ export default function ProfileUpdatePage() {
   const [intAdd, setIntAddress] = React.useState('')
   const [department, setDepartment] = React.useState('')
 
+  const { open, onClose } = props
+
   const submit = () => {
     UC.updateProfileDetail({fullname, age, gender, altEmail, phoneNumber, institution, role, intAdd, department})
+    onClose()
   }
 
   return(
     <React.Fragment>
       <Dialog
-        open
+        open={open}
+        onClose={() => onClose()}
+        onBackdropClick={() => onClose()}
         fullScreen={fullScreen}
       >
         <DialogTitle disableTypography>
@@ -149,9 +154,15 @@ export default function ProfileUpdatePage() {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button variant='contained' onClick={submit}>Update Info</Button>
+          <Button variant='contained' onClick={() => onClose()}>Close</Button>
+          <Button variant='contained' onClick={submit} color='primary'>Update Info</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>
   )
+}
+
+interface ProfileUpdateProps {
+  open: boolean
+  onClose: Function
 }

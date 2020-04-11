@@ -20,7 +20,7 @@ class AppointmentConnection {
   public selectedApp: Appointment = this.appointmentDB[0]
 
 
-  public timeslots: WorkingTime[] = [
+  public workingTimes: WorkingTime[] = [
     { 
       id: 1, userId: 1, type: 'byTime', 
       timeslots: [
