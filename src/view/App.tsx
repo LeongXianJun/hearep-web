@@ -14,7 +14,7 @@ const PatientDetailPage = loadable(() => import('./patient/detail'))
 const PatientPage = loadable(() => import('./patient/index'))
 const AddPrescriptionPage = loadable(() => import('./prescription/add'))
 const PrescriptionPage = loadable(() => import('./prescription/index'))
-const UpdateProfileDetailPage = loadable(() => import('./profile/update'))
+const ProfilePage = loadable(() => import('./profile/index'))
 const MissingPage = loadable(() => import('./MissingPage'))
 
 const routes: RoutePair[] = [
@@ -60,8 +60,8 @@ const routes: RoutePair[] = [
     page: <PrescriptionPage/>
   },
   {
-    path: '/profile/update',
-    page: <UpdateProfileDetailPage/>
+    path: '/profile',
+    page: <ProfilePage/>
   },
   {
     path: '/',

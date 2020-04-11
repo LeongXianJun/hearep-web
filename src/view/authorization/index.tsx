@@ -134,9 +134,9 @@ export default function AuthorizationPage() {
       if(result) {
         UC.register(username, email, password)
           .then(res => setR(res))
-          .then(() => history.replace('/updateProfileDetail'))
+          .then(() => history.replace('/dashboard'))
           .catch(err => setR(err.message))
-        } else {
+      } else {
         throw new Error('Password is not matched')
       }
     })
