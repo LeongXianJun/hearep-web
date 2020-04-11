@@ -78,7 +78,7 @@ export default function App() {
             ? page
             : <Redirect to='/login'/>
           : isAuthenticationPage // if login, then the user should not able to access authentication pages
-            ? <Redirect to='/'/>
+            ? <Redirect to='/dashboard'/>
             : page
         }
       </Route>
