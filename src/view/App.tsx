@@ -4,14 +4,16 @@ import loadable from '@loadable/component'
 import UserConnection from '../connections/UserConnection'
 
 // pages
+const AuthorizationPage = loadable(() => import('./authorization/index'))
 const Dashboard = loadable(() => import('./Dashboard'))
-const MissingPage = loadable(() => import('./MissingPage'))
+const AddLabTestPage = loadable(() => import('./labTest/add'))
+const LabTestPage = loadable(() => import('./labTest/index'))
 const PatientDetailPage = loadable(() => import('./patient/detail'))
 const PatientPage = loadable(() => import('./patient/index'))
 const AddPrescriptionPage = loadable(() => import('./prescription/add'))
 const PrescriptionPage = loadable(() => import('./prescription/index'))
-const AuthorizationPage = loadable(() => import('./authorization/index'))
 const UpdateProfileDetailPage = loadable(() => import('./profile/update'))
+const MissingPage = loadable(() => import('./MissingPage'))
 
 const routes: RoutePair[] = [
   {
@@ -22,6 +24,14 @@ const routes: RoutePair[] = [
   {
     path: '/dashboard',
     page: <Dashboard/>
+  },
+  {
+    path: '/labTest/add',
+    page: <AddLabTestPage/>
+  },
+  {
+    path: '/labTest',
+    page: <LabTestPage/>
   },
   {
     path: '/patient/detail',

@@ -46,7 +46,7 @@ export default function PatientDetailPage() {
 
   const viewLabTest = (record: Record) => {
     RC.selectedRecord = record
-    history.push('/labTestResult')
+    history.push('/labTest')
   }
 
   return(
@@ -97,7 +97,7 @@ export default function PatientDetailPage() {
           </AppExpansion>
           <AppExpansion
             title='Lab Test Result'
-            actions={<Button size="small" onClick={() => history.push('/labTestResult/add')}>Add</Button>}
+            actions={<Button size="small" onClick={() => history.push('/labTest/add')}>Add</Button>}
           >
             <Table>
               <TableBody>

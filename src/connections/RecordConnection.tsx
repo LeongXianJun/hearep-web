@@ -35,7 +35,7 @@ class RecordConnection {
       medications: []
     },
     { 
-      id: 9, name: 'Jax Pierce', type: 'lab test result', date: new Date('2020-3-30'), appID: 1, title: 'Urine Test',
+      id: 9, name: 'Jax Pierce', type: 'lab test result', date: new Date('2020-3-30'), appID: 1, comment: 'Time to work out more', title: 'Urine Test',
       data: [ 
         {field: 'Epinephrine', result: '60', normalRange: '0 - 20' },
         {field: 'Metanephrine', result: '3,232', normalRange: '0 - 1,000' },
@@ -44,7 +44,7 @@ class RecordConnection {
         {field: 'Dopamine', result: '222', normalRange: '65 - 400' }
       ] 
     },
-    { id: 10, name: 'Leong Xian Jun', type: 'lab test result', date: new Date('2020-3-30'), appID: 6, title: 'Blood Test',
+    { id: 10, name: 'Leong Xian Jun', type: 'lab test result', date: new Date('2020-3-30'), appID: 6, comment: 'Time to work out more', title: 'Blood Test',
       data: [ 
         {field: 'White Blood Cells', result: '1,400', normalRange: '4,000 - 11,000' }, 
         {field: 'Neutrophils', result: '800', normalRange: '1,500 - 5,000' }, 
@@ -76,7 +76,7 @@ class RecordConnection {
       ]
     }
   ]
-  public selectedRecord: Record = this.recordDB[10]
+  public selectedRecord: Record = this.recordDB[9]
 
   public addNewHealthPrescription = (patientName: string, illness: string, clinicalOpinion: string, medicines: {medicine: string, dosage: number, usage: string}[]) => {
     const newHP: Record = { 
@@ -106,34 +106,41 @@ class RecordConnection {
   }
 }
 
-export type Record = {
+export type Record = HealthPrescription | MedicationRecord | LabTestResult
+
+type RecordDetail = {
   id: number
   name: string
   date: Date
-} & ( 
-  {
-    type: 'health prescription'
-    appID?: number // appointment id
-    illness: string
-    clinicalOpinion: string
-  } | {
-    type: 'medication record'
-    prescriptionID: number
-    medications: {
-      medicine: string
-      dosage: number
-      usage: string
-    } []
-  } | {
-    type: 'lab test result'
-    appID: number // appointment id
-    title: string
-    data: { 
-      field: string
-      result: string
-      normalRange: string
-    }[]
-  }
-)
+}
+
+export type HealthPrescription = RecordDetail & {
+  type: 'health prescription'
+  appID?: number // appointment id
+  illness: string
+  clinicalOpinion: string
+}
+
+export type MedicationRecord = RecordDetail & {
+  type: 'medication record'
+  prescriptionID: number
+  medications: {
+    medicine: string
+    dosage: number
+    usage: string
+  } []
+}
+
+export type LabTestResult = RecordDetail & {
+  type: 'lab test result'
+  appID: number // appointment id
+  title: string
+  comment: string
+  data: { 
+    field: string
+    result: string
+    normalRange: string
+  }[]
+}
 
 export default RecordConnection.instance
