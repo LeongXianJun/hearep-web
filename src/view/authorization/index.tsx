@@ -10,37 +10,7 @@ import title from '../../resources/logo/title.svg'
 import slogan from '../../resources/logo/slogan.svg'
 
 import './index.css'
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  dir?: string;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <Typography
-      component="div"
-      role="tabpanel"
-      hidden={value !== index}
-      id={`full-width-tabpanel-${index}`}
-      aria-labelledby={`full-width-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box p={3}>{children}</Box>}
-    </Typography>
-  )
-}
-
-function tabProps(index: any) {
-  return {
-    id: `full-width-tab-${index}`,
-    'aria-controls': `full-width-tabpanel-${index}`,
-  };
-}
+import { tabProps, AppTabPanel } from '../common';
 
 export default function AuthorizationPage() {
   const theme = useTheme()
@@ -95,9 +65,9 @@ export default function AuthorizationPage() {
                 >
                   {
                     [Login(), Register()].map((ele, index) => (
-                      <TabPanel key={'tp-' + index} value={value} index={index} dir={theme.direction}>
+                      <AppTabPanel key={'tp-' + index} value={value} index={index} dir={theme.direction}>
                         { ele }
-                      </TabPanel>
+                      </AppTabPanel>
                     ))
                   }
                 </SwipeableViews>

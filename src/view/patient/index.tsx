@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 import { AppContainer } from '../common'
-import { TextField, InputAdornment,
+import { TextField, InputAdornment, Typography,
   Card, CardContent, Grid, Dialog, DialogTitle, 
   DialogContent, DialogContentText, DialogActions, Button, ButtonBase, 
   useMediaQuery, useTheme, Checkbox, FormControl, FormControlLabel } from '@material-ui/core'
 import SearchIcon from '@material-ui/icons/Search'
+import { useHistory } from 'react-router-dom'
 import UC, { User } from '../../connections/UserConnection'
 
 import maleAvatar from '../../resources/images/maleAvatar.png'
 import femaleAvatar from '../../resources/images/femaleAvatar.png'
-import { useHistory } from 'react-router-dom'
 
 export default function PatientPage() {
   const theme = useTheme()
@@ -26,6 +26,7 @@ export default function PatientPage() {
 
   return(
     <AppContainer>
+      <Typography variant='h2' gutterBottom>{'Patient'}</Typography>
       {/* Search Bar */}
       <TextField
         // className={classes.margin}

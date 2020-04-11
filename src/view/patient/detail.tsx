@@ -37,7 +37,7 @@ export default function PatientDetailPage() {
   const appointmentByNumber = AC.appointmentDB
     .filter(a => a.name === patient?.detail?.fullname && a.medicalStaff === UC.currentUser?.detail?.fullname)
     .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .find(a => a.type === 'byNumber') 
+    .find(a => a.type === 'byNumber')
 
   const viewPrescription = (record: Record) => {
     RC.selectedRecord = record
@@ -70,7 +70,7 @@ export default function PatientDetailPage() {
                 title='Patient Information'
                 defaultExpanded
               >
-                { patientProfile(patient) }
+                { PatientProfile(patient) }
               </AppExpansion>
             : null
           }
@@ -167,7 +167,7 @@ export default function PatientDetailPage() {
   )
 }
 
-function patientProfile(patient: User) {
+function PatientProfile(patient: User) {
   const {detail} = patient
   
   const details = [

@@ -39,8 +39,8 @@ export default function Dashboard() {
             />
             <CardContent>
               {
-                graphs.map(({title, graph: data}) => 
-                  <AppExpansion title={title}>
+                graphs.map(({title, graph: data}, index) => 
+                  <AppExpansion title={title} key={'exp-' + index}>
                     { data }
                   </AppExpansion>
                 )
@@ -67,7 +67,7 @@ function leftBar() {
         title='Notification'
       />
       <CardContent>
-        { notificationExp('Nearing Appointments', AC.appointmentDB) }
+        { notificationExp('Nearing Appointments', AC.nearing) }
         { notificationExp('Medication Refill Reminder', RC.recordDB.filter(r => r.type === 'medication record')) }
       </CardContent>
     </Card>
@@ -82,7 +82,7 @@ function notificationExp(title: string, data: (Appointment | Record)[]) {
           <TableBody>
             {
               data.map(({name}, index) => 
-                <TableRow key={'row-' + index}>
+                <TableRow key={name + 'row-' + index}>
                   <TableCell>{name}</TableCell>
                 </TableRow>
               )
