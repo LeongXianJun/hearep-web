@@ -67,7 +67,7 @@ function leftBar() {
         title='Notification'
       />
       <CardContent>
-        { notificationExp('Nearing Appointments', AC.appointmentDB) }
+        { notificationExp('Nearing Appointments', AC.nearing) }
         { notificationExp('Medication Refill Reminder', RC.recordDB.filter(r => r.type === 'medication record')) }
       </CardContent>
     </Card>

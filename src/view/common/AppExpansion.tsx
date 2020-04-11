@@ -7,7 +7,7 @@ export default function AppExpansion(prop: AEProps) {
   const { children, defaultExpanded, title, expandIcon, actions } = prop
 
   return(
-    <ExpansionPanel defaultExpanded={defaultExpanded}>
+    <ExpansionPanel defaultExpanded={defaultExpanded} style={{width: '100%'}}>
       <ExpansionPanelSummary
         expandIcon={expandIcon ?? <ExpandMoreIcon/>}
       >

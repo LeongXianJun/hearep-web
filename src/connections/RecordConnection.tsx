@@ -11,7 +11,7 @@ class RecordConnection {
       illness: 'Asthma', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 
-      id: 3, name: 'Leong Xian Jun', type: 'health prescription', date: new Date('2020-3-28'), appID: 5, 
+      id: 3, name: 'Leong Xian Jun', type: 'health prescription', date: new Date('2020-3-28'), appID: 8, 
       illness: 'Sore Throat', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 
@@ -35,7 +35,7 @@ class RecordConnection {
       medications: []
     },
     { 
-      id: 9, name: 'Jax Pierce', type: 'lab test result', date: new Date('2020-3-30'), appID: 1, comment: 'Time to work out more', title: 'Urine Test',
+      id: 9, name: 'Jax Pierce', type: 'lab test result', date: new Date('2020-3-30'), appID: 4, comment: 'Time to work out more', title: 'Urine Test',
       data: [ 
         {field: 'Epinephrine', result: '60', normalRange: '0 - 20' },
         {field: 'Metanephrine', result: '3,232', normalRange: '0 - 1,000' },
@@ -44,7 +44,7 @@ class RecordConnection {
         {field: 'Dopamine', result: '222', normalRange: '65 - 400' }
       ] 
     },
-    { id: 10, name: 'Leong Xian Jun', type: 'lab test result', date: new Date('2020-3-30'), appID: 6, comment: 'Time to work out more', title: 'Blood Test',
+    { id: 10, name: 'Leong Xian Jun', type: 'lab test result', date: new Date('2020-3-30'), appID: 9, comment: 'Time to work out more', title: 'Blood Test',
       data: [ 
         {field: 'White Blood Cells', result: '1,400', normalRange: '4,000 - 11,000' }, 
         {field: 'Neutrophils', result: '800', normalRange: '1,500 - 5,000' }, 
@@ -54,7 +54,7 @@ class RecordConnection {
       ] 
     },
     { 
-      id: 11, name: 'Leong Xian Jun', type: 'health prescription', date: new Date('2020-4-16'), appID: 6, 
+      id: 11, name: 'Leong Xian Jun', type: 'health prescription', date: new Date('2020-4-16'), appID: 9, 
       illness: 'Sore Throat', clinicalOpinion: 'Rest More and Take Medication on Time'
     },
     { 

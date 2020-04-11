@@ -20,7 +20,7 @@ import './navbar.css'
 const links: LinkRoute[] =  [
   { path: '/dashboard', name: 'Home' },
   { path: '/patient', name: 'Patient' },
-  // { path: '/appointment', name: 'Appointment' }
+  { path: '/appointment', name: 'Appointment' }
 ]
 
 export default function NavBar() {
