@@ -1,31 +1,33 @@
 import React, { useState } from 'react'
-import { AppContainer } from '../common'
+import { AppContainer, AppExpansion } from '../common'
 import { Grid, IconButton,
   Card, CardHeader, CardContent, CardActions, Breadcrumbs, 
-  Typography, Link, Button, TextField } from '@material-ui/core'
+  Typography, Link, Button, TextField, Table, TableBody, TableRow, TableCell } from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add'
 import DeleteIcon from '@material-ui/icons/Delete'
 import UC from '../../connections/UserConnection'
 import RC from '../../connections/RecordConnection'
+import AC, { Appointment } from '../../connections/AppointmentConnection'
 import { useHistory } from 'react-router-dom'
 
 export default function AddLabTestPage() {
   const history = useHistory()
+  const app = AC.selectedApp
   const patientName = UC.selectedPatient?.detail?.fullname ?? ''
   const date = new Date()
-  const [illness, setIllness] = useState('')
-  const [clinicalOponion, setClinicalOponion] = useState('')
-  const [medicines, setMedicines] = useState([{ medicine: '', dosage: 0, usage: '' }])
+  const [title, setTitle] = useState('')
+  const [comment, setComment] = useState('')
+  const [data, setData] = useState([{ field: '', result: '', normalRange: '' }])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
     { path: '/patient', text: 'Patient' },
     { path: '/patient/detail', text: patientName },
-    { path: undefined, text: 'Add new Health Prescription'}
+    { path: undefined, text: 'Add new Lab Test Result'}
   ]
 
   const submit = () => {
-    RC.addNewHealthPrescription(patientName, illness, clinicalOponion, medicines)
+    RC.addNewLabTestResult(patientName, title, comment, data, app.id)
     history.goBack()
   }
 
@@ -44,19 +46,20 @@ export default function AddLabTestPage() {
       </Breadcrumbs>
       <Grid container direction='row' justify='center' spacing={3} style={{marginTop: 5}}>
         <Grid item xs={12} md={4}>
-          { prescriptionDetail() }
+          { LabTestDetail() }
+          { AppointmentDetail(app) }
         </Grid>
         <Grid item xs={12} md={8}>
-          {Medication()}
+          { LabTestResult() }
         </Grid>
       </Grid>
     </AppContainer>
   )
 
-  function prescriptionDetail() {
+  function LabTestDetail() {
     return (
       <Card>
-        <CardHeader title={'Prescription Information'}/>
+        <CardHeader title={'Lab Test Detail'}/>
         <CardContent>
           <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -82,62 +85,78 @@ export default function AddLabTestPage() {
                 required
                 variant='outlined'
                 placeholder="Enter the main illness"
-                label="Illness"
+                label="Title"
                 fullWidth
-                onChange = {event => setIllness(event.target.value)}
+                onChange = {event => setTitle(event.target.value)}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 required
                 variant='outlined'
-                placeholder="Enter your opinion on the illness"
-                label="Clinical Opinion"
+                placeholder="Enter your comment on this lab test"
+                label="Comment"
                 fullWidth
                 multiline
                 rows={3}
                 rowsMax={5}
-                onChange = {event => setClinicalOponion(event.target.value)}
+                onChange = {event => setComment(event.target.value)}
               />
             </Grid>
           </Grid>
         </CardContent>
         <CardActions>
           <Button onClick={submit} color="primary" size='small'>
-            Add new Health Prescription
+            Add new Lab Test Result
           </Button>
         </CardActions>
       </Card>
     )
   }
 
-  function Medication() {
-    const addMedicine = () => {
-      setMedicines([...medicines, { medicine: '', dosage: 0, usage: '' }])
+  function AppointmentDetail(app: Appointment) {
+    const details = [
+      { field: 'Date', val: app?.date.toDateString() },
+      { field: 'Time', val: app?.type === 'byTime'? app.time: undefined }
+    ].filter(({val}) => val !== undefined && val !== '')
+
+    return (
+      <AppExpansion title={'Appointment Detail'}>
+        <Table>
+          <TableBody>
+            {
+              details.map(({field, val}, index) => 
+                <TableRow hover key={'arow-' + index}>
+                  <TableCell>{field}</TableCell>
+                  <TableCell>{val}</TableCell>
+                </TableRow>
+              )
+            }
+          </TableBody>
+        </Table>
+      </AppExpansion>
+    )
+  }
+
+  function LabTestResult() {
+    const addRow = () => {
+      setData([...data, { field: '', result: '', normalRange: '' }])
     }
 
-    const removeMedicine = (num: number) => {
-      setMedicines([...medicines.slice(0, num), ...medicines.slice(num + 1)])
+    const removeRow = (num: number) => {
+      setData([...data.slice(0, num), ...data.slice(num + 1)])
     }
 
-    const updateMedicine = (num: number, val: string) => {
-      setMedicines([...medicines.slice(0, num), { ...medicines[num], 'medicine': val }, ...medicines.slice(num + 1) ])
-    }
-
-    const updateDosage = (num: number, val: number) => {
-      setMedicines([...medicines.slice(0, num), { ...medicines[num], 'dosage': val }, ...medicines.slice(num + 1) ])
-    }
-
-    const updateUsage = (num: number, val: string) => {
-      setMedicines([...medicines.slice(0, num), { ...medicines[num], 'usage': val }, ...medicines.slice(num + 1) ])
+    const updateRow = (num: number, col: 'field' | 'result' | 'normalRange', val: string) => {
+      setData([...data.slice(0, num), { ...data[num], [col]: val }, ...data.slice(num + 1) ])
     }
 
     return (
       <Card>
         <CardHeader 
-          title={'Medication Record'}
+          title={'Lab Test Result'}
           action={
-            <IconButton  onClick={addMedicine}>
+            <IconButton  onClick={addRow}>
               <AddIcon/>
             </IconButton>
           }
@@ -145,43 +164,42 @@ export default function AddLabTestPage() {
         <CardContent>
           <Grid container direction='column' spacing={2}>
             {
-              medicines.map((medicine, index) => 
-                <Grid key={'medicine-' + index} item container direction='row' spacing={1} xs={12}>
+              data.map((row, index) => 
+                <Grid key={'row-' + index} item container direction='row' spacing={1} xs={12}>
                   <Grid item container direction='row' spacing={1} xs={10} sm={11}>
                     <Grid item xs={12} sm={4}>
                       <TextField
                         required
                         variant="outlined"
-                        placeholder="Enter the Medicine"
+                        placeholder="Enter Test Component"
                         fullWidth
-                        label={"Medicine " + (index + 1)}
-                        onChange = {event => updateMedicine(index, event.target.value)}
+                        label={"Test Component " + (index + 1)}
+                        onChange = {event => updateRow(index, 'field', event.target.value)}
                       />
                     </Grid>
                     <Grid item xs={6} sm={4}>
                       <TextField
                         required
                         variant="outlined"
-                        type="number"
-                        placeholder="Enter the Dosage"
+                        placeholder="Enter the Result"
                         fullWidth
-                        label={"Dosage " + (index + 1)}
-                        onChange = {event => updateDosage(index, Number(event.target.value))}
+                        label={"Result " + (index + 1)}
+                        onChange = {event => updateRow(index, 'result', event.target.value)}
                       />
                     </Grid>
                     <Grid item xs={6} sm={4}>
                       <TextField
                         required
                         variant="outlined"
-                        placeholder="Enter the Usage"
+                        placeholder="Enter the Normal Range"
                         fullWidth
-                        label={"Usage " + (index + 1)}
-                        onChange = {event => updateUsage(index, event.target.value)}
+                        label={"Normal Range " + (index + 1)}
+                        onChange = {event => updateRow(index, 'normalRange', event.target.value)}
                       />
                     </Grid>
                   </Grid>
                   <Grid item container xs alignContent='center' justify='center'>
-                    <IconButton onClick={() => removeMedicine(index)}>
+                    <IconButton onClick={() => removeRow(index)}>
                       <DeleteIcon/>
                     </IconButton>
                   </Grid>

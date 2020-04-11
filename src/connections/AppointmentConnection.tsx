@@ -11,6 +11,7 @@ class AppointmentConnection {
     { id: 8, name: 'Leong Xian Jun', date: new Date('2020-4-24'), medicalStaff: 'Jone Leong', type: 'byTime', time: '10:00 am' },
     { id: 9, name: 'Leong Xian Jun', date: new Date('2020-4-28'), medicalStaff: 'Jone Leong', type: 'byNumber', turn: 5 }
   ]
+  public selectedApp: Appointment = this.appointmentDB[0]
 
 }
 

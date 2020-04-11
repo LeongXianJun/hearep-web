@@ -81,7 +81,7 @@ class RecordConnection {
   public addNewHealthPrescription = (patientName: string, illness: string, clinicalOpinion: string, medicines: {medicine: string, dosage: number, usage: string}[]) => {
     const newHP: Record = { 
       id: this.recordDB.length, 
-      name: this.selectedRecord.name, 
+      name: patientName, 
       type: 'health prescription', 
       date: new Date(), 
       illness: illness,
@@ -101,6 +101,19 @@ class RecordConnection {
         date: new Date(), 
         prescriptionID: prescriptionID ?? this.selectedRecord.id,
         medications: medicines
+      }
+    ]
+  }
+
+  public addNewLabTestResult = (patientName: string, title: string, comment: string, data: { field: string, result: string, normalRange: string }[], appID: number) => {
+    this.recordDB = [
+      ...this.recordDB,
+      { 
+        id: this.recordDB.length, 
+        name: patientName, 
+        type: 'lab test result',
+        date: new Date(),
+        title, comment, appID, data
       }
     ]
   }

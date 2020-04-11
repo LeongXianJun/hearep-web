@@ -47,7 +47,7 @@ export default function AddPrescriptionPage() {
           { prescriptionDetail() }
         </Grid>
         <Grid item xs={12} md={8}>
-          {Medication()}
+          { Medication() }
         </Grid>
       </Grid>
     </AppContainer>

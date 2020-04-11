@@ -97,7 +97,7 @@ export default function LabTestPage() {
   function LabTestResult(props: LabTestResultProps) {
     const { data: { data } } = props
     const columns = [
-      { title: 'Component', field: 'field' },
+      { title: 'Test Component', field: 'field' },
       { title: 'Result', field: 'result' },
       { title: 'Normal Range', field: 'normalRange' }
     ]

@@ -95,10 +95,7 @@ export default function PatientDetailPage() {
               </TableBody>
             </Table>
           </AppExpansion>
-          <AppExpansion
-            title='Lab Test Result'
-            actions={<Button size="small" onClick={() => history.push('/labTest/add')}>Add</Button>}
-          >
+          <AppExpansion title='Lab Test Result'>
             <Table>
               <TableBody>
                 {
