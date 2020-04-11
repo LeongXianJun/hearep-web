@@ -1,12 +1,13 @@
 import React from 'react'
-import { ExpansionPanel, ExpansionPanelSummary, Typography, ExpansionPanelDetails, Grid } from '@material-ui/core'
+import { ExpansionPanel, ExpansionPanelSummary, Typography, ExpansionPanelDetails, Grid, 
+  Divider, ExpansionPanelActions } from '@material-ui/core'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
 
 export default function AppExpansion(prop: AEProps) {
-  const { children, title, expandIcon } = prop
+  const { children, defaultExpanded, title, expandIcon, actions } = prop
 
   return(
-    <ExpansionPanel>
+    <ExpansionPanel defaultExpanded={defaultExpanded}>
       <ExpansionPanelSummary
         expandIcon={expandIcon ?? <ExpandMoreIcon/>}
       >
@@ -21,12 +22,24 @@ export default function AppExpansion(prop: AEProps) {
           { children }
         </Grid>
       </ExpansionPanelDetails>
+      {
+        actions
+        ? <>
+            <Divider />
+            <ExpansionPanelActions>
+              { actions }
+            </ExpansionPanelActions>
+          </>
+        : undefined
+      }
     </ExpansionPanel>
   )
 }
 
 interface AEProps {
   children: JSX.Element[] | JSX.Element
+  defaultExpanded?: boolean
   title?: string
   expandIcon?: React.ReactNode
+  actions?: JSX.Element
 }

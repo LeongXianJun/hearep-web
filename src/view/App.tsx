@@ -4,10 +4,16 @@ import loadable from '@loadable/component'
 import UserConnection from '../connections/UserConnection'
 
 // pages
-const Dashboard = loadable(() => import('./Dashboard'))
-const MissingPage = loadable(() => import('./MissingPage'))
 const AuthorizationPage = loadable(() => import('./authorization/index'))
+const Dashboard = loadable(() => import('./Dashboard'))
+const AddLabTestPage = loadable(() => import('./labTest/add'))
+const LabTestPage = loadable(() => import('./labTest/index'))
+const PatientDetailPage = loadable(() => import('./patient/detail'))
+const PatientPage = loadable(() => import('./patient/index'))
+const AddPrescriptionPage = loadable(() => import('./prescription/add'))
+const PrescriptionPage = loadable(() => import('./prescription/index'))
 const UpdateProfileDetailPage = loadable(() => import('./profile/update'))
+const MissingPage = loadable(() => import('./MissingPage'))
 
 const routes: RoutePair[] = [
   {
@@ -16,18 +22,40 @@ const routes: RoutePair[] = [
     page: <AuthorizationPage/>
   },
   {
+    path: '/dashboard',
+    page: <Dashboard/>
+  },
+  {
+    path: '/labTest/add',
+    page: <AddLabTestPage/>
+  },
+  {
+    path: '/labTest',
+    page: <LabTestPage/>
+  },
+  {
+    path: '/patient/detail',
+    page: <PatientDetailPage/>
+  },
+  {
+    path: '/patient',
+    page: <PatientPage/>
+  },
+  {
+    path: '/prescription/add',
+    page: <AddPrescriptionPage/>
+  },
+  {
+    path: '/prescription',
+    page: <PrescriptionPage/>
+  },
+  {
     path: '/profile/update',
     page: <UpdateProfileDetailPage/>
   },
   {
-    path: '/dashboard',
-    page: <Dashboard/>
-    // will be dashboard
-  },
-  {
     path: '/',
     page: <MissingPage/>
-    // will be dashboard
   }
 ]
 

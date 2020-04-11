@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container, Typography, TextField, Button, Grid, Tabs, Tab, useTheme, Paper } from '@material-ui/core'
-import UserConnection from '../../connections/UserConnection'
+import UC from '../../connections/UserConnection'
 import { useHistory } from 'react-router-dom'
 
 import SwipeableViews from 'react-swipeable-views'
@@ -106,127 +106,127 @@ export default function AuthorizationPage() {
       </div>
     </React.Fragment>
   )
-}
+  
+  function Login() {
+    const [username, setUsername] = React.useState('')
+    const [password, setPassword] = React.useState('')
+    const [result, setR] = React.useState('')
+  
+    const submit = () => UC.authenticate(username, password)
+      .then(res => setR(res))
+      .catch(err => setR(err.message))
+  
+    return (
+      <Grid container xs={12} direction='column' spacing={1} justify='center' alignItems='center'>
+        <Grid item>
+          <TextField
+            required
+            placeholder="Enter your Username/Email"
+            label="Username/Email Address"
+            fullWidth
+            onChange = {event => setUsername(event.target.value)}
+          />
+        </Grid>
+        <Grid item>
+          <TextField
+            type="password"
+            required
+            placeholder="Enter your Password"
+            label="Password"
+            fullWidth
+            onChange = {event => setPassword(event.target.value)}
+          />
+        </Grid>
+        <Grid item>
+          <Typography>
+            {result}
+          </Typography>
+          <Button variant='contained' style={{margin: 15}} onClick={submit}>Login</Button>
+        </Grid>
+      </Grid>
+    )
+  }
 
-function Login() {
-  const [username, setUsername] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [result, setR] = React.useState('')
-
-  const submit = () => UserConnection.authenticate(username, password)
-    .then(res => setR(res))
+  function Register() {
+    const [username, setUsername] = React.useState('')
+    const [email, setEmail] = React.useState('')
+    const [password, setPassword] = React.useState('')
+    const [confirm, setConfirm] = React.useState('')
+    const [result, setR] = React.useState('')
+  
+    const history = useHistory()
+  
+    const register = () => new Promise<boolean>((resolve, reject) => {
+      // password regex checking
+      resolve(password === confirm)
+    }).then(result => {
+      if(result) {
+        UC.register(username, email, password)
+          .then(res => setR(res))
+          .then(() => history.replace('/updateProfileDetail'))
+          .catch(err => setR(err.message))
+        } else {
+        throw new Error('Password is not matched')
+      }
+    })
     .catch(err => setR(err.message))
-
-  return (
-    <Grid container xs={12} direction='column' spacing={1} justify='center' alignItems='center'>
-      <Grid item>
-        <TextField
-          required
-          placeholder="Enter your Username/Email"
-          label="Username/Email Address"
-          fullWidth
-          onChange = {event => setUsername(event.target.value)}
-        />
-      </Grid>
-      <Grid item>
-        <TextField
-          type="password"
-          required
-          placeholder="Enter your Password"
-          label="Password"
-          fullWidth
-          onChange = {event => setPassword(event.target.value)}
-        />
-      </Grid>
-      <Grid item>
-        <Typography>
-          {result}
-        </Typography>
-        <Button variant='contained' style={{margin: 15}} onClick={submit}>Login</Button>
-      </Grid>
-    </Grid>
-  )
-}
-
-function Register() {
-  const [username, setUsername] = React.useState('')
-  const [email, setEmail] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [confirm, setConfirm] = React.useState('')
-  const [result, setR] = React.useState('')
-
-  const history = useHistory()
-
-  const register = () => new Promise<boolean>((resolve, reject) => {
-    // password regex checking
-    resolve(password === confirm)
-  }).then(result => {
-    if(result) {
-      UserConnection.register(username, email, password)
-        .then(res => setR(res))
-        .then(() => history.replace('/updateProfileDetail'))
-        .catch(err => setR(err.message))
-      } else {
-      throw new Error('Password is not matched')
-    }
-  })
-  .catch(err => setR(err.message))
-
-  return (
-    <Grid container spacing={1} direction='column' justify='center' alignItems='center'>
-      <Grid item>
-        <Grid container spacing={1} direction='row' justify='center' alignItems='center'>
-          <Grid item>
-            <TextField
-              required
-              placeholder="Enter your Username"
-              label="Username"
-              fullWidth
-              onChange = {event => setUsername(event.target.value)}
-            />
-          </Grid>
-          <Grid item>
-            <TextField
-              required
-              placeholder="Enter your Email"
-              label="Email Address"
-              fullWidth
-              onChange = {event => setEmail(event.target.value)}
-            />
+  
+    return (
+      <Grid container spacing={1} direction='column' justify='center' alignItems='center'>
+        <Grid item>
+          <Grid container spacing={1} direction='row' justify='center' alignItems='center'>
+            <Grid item>
+              <TextField
+                required
+                placeholder="Enter your Username"
+                label="Username"
+                fullWidth
+                onChange = {event => setUsername(event.target.value)}
+              />
+            </Grid>
+            <Grid item>
+              <TextField
+                required
+                placeholder="Enter your Email"
+                label="Email Address"
+                fullWidth
+                onChange = {event => setEmail(event.target.value)}
+              />
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-      <Grid item>
-        <Grid container spacing={1} direction='row' justify='center' alignItems='center'>
-          <Grid item>
-            <TextField
-              required
-              type="password"
-              placeholder="Enter your Password"
-              label="Password"
-              fullWidth
-              onChange = {event => setPassword(event.target.value)}
-            />
-          </Grid>
-          <Grid item>
-            <TextField
-              required
-              type="password"
-              placeholder="Enter your Password again"
-              label="Confirm"
-              fullWidth
-              onChange = {event => setConfirm(event.target.value)}
-            />
+        <Grid item>
+          <Grid container spacing={1} direction='row' justify='center' alignItems='center'>
+            <Grid item>
+              <TextField
+                required
+                type="password"
+                placeholder="Enter your Password"
+                label="Password"
+                fullWidth
+                onChange = {event => setPassword(event.target.value)}
+              />
+            </Grid>
+            <Grid item>
+              <TextField
+                required
+                type="password"
+                placeholder="Enter your Password again"
+                label="Confirm"
+                fullWidth
+                onChange = {event => setConfirm(event.target.value)}
+              />
+            </Grid>
           </Grid>
         </Grid>
+        <Grid item>
+          <Typography>
+            {result}
+            {UC.userDB.map(user => user.username)}
+          </Typography>
+          <Button variant='contained' style={{margin: 15}} onClick={register}>Register</Button>
+        </Grid>
       </Grid>
-      <Grid item>
-        <Typography>
-          {result}
-          {UserConnection.userDB.map(user => user.username)}
-        </Typography>
-        <Button variant='contained' style={{margin: 15}} onClick={register}>Register</Button>
-      </Grid>
-    </Grid>
-  )
+    )
+  }
 }
