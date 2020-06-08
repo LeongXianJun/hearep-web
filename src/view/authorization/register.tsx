@@ -1,12 +1,12 @@
-import React, { FC, useEffect, useState } from 'react'
+import React, { FC, useState } from 'react'
 import {
-  Typography, Grid, DialogTitle, TextField, makeStyles,
-  Theme, createStyles, Button, RadioGroup, FormControlLabel,
-  Radio, FormControl, InputLabel, Select, MenuItem,
-  DialogContent, Dialog, DialogActions, useTheme, useMediaQuery
+  Container, TextField, Button, Grid, Typography,
+  FormControl, RadioGroup, FormControlLabel, Radio, InputLabel,
+  Select, MenuItem, makeStyles, Theme, createStyles
 } from '@material-ui/core'
-import { withResubAutoSubscriptions } from 'resub'
+import { useHistory } from 'react-router-dom'
 
+import './index.css'
 import { UserStore } from '../../stores'
 
 const useStyle = makeStyles((theme: Theme) =>
@@ -30,23 +30,12 @@ const roles = [
 ]
 
 interface PageProp {
-  open: boolean
-  onClose: Function
+
 }
 
-const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
-  const theme = useTheme()
+const RegisterInfoPage: FC<PageProp> = () => {
   const styles = useStyle()
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
-  const CurrentUser = UserStore.getUser()
-
-  useEffect(() => {
-    if (CurrentUser) {
-      setInfo({ ...CurrentUser, dob: CurrentUser.dob.toDateString() })
-    }
-
-    return UserStore.unsubscribe
-  }, [ CurrentUser ])
+  const history = useHistory()
 
   const [ info, setInfo ] = useState({
     username: '',
@@ -59,25 +48,25 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
       department: '',
     }
   })
+  const [ isSubmitting, setIsSubmitting ] = useState(false)
 
-  const { username, dob, gender, medicalInstituition: { role, name, address, department } } = info
+  const { gender, medicalInstituition: { role } } = info
 
-  const submit = () =>
-    UserStore.updateProfile({ ...CurrentUser, ...info })
-      .then(() => onClose())
+  const submit = () => {
+    setIsSubmitting(true)
+    UserStore.createUser({ ...info })
+      .then(() => {
+        setIsSubmitting(false)
+        UserStore.setRegister(false)
+        history.replace('dashboard')
+      })
+      .catch(err => console.error((err)))
+  }
 
   return (
     <React.Fragment>
-      <Dialog
-        open={ open }
-        onClose={ () => onClose() }
-        onBackdropClick={ () => onClose() }
-        fullScreen={ fullScreen }
-      >
-        <DialogTitle disableTypography>
-          <Typography variant='h4' align='left'>{ 'Profile Detail' }</Typography>
-        </DialogTitle>
-        <DialogContent>
+      <Container style={ { height: '100vh' } }>
+        <Grid container direction='column' justify='center' alignItems='center' style={ { height: '100vh' } }>
           <Grid container direction='row' spacing={ 3 }>
             <Grid item md={ 6 } xs={ 12 }>
               <Typography variant='h5' align='left'>{ 'Basic Information' }</Typography>
@@ -88,17 +77,15 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 placeholder="Enter your Fullname"
                 label="Fullname"
                 fullWidth
-                value={ username }
                 onChange={ event => setInfo({ ...info, username: event.target.value }) }
               />
               <TextField
                 required
                 variant="outlined"
                 className={ styles.input }
-                placeholder="Enter your Birth Date"
-                label="Date"
+                placeholder="1999-01-16"
+                label="Birth Date"
                 fullWidth
-                value={ dob }
                 onChange={ event => setInfo({ ...info, dob: event.target.value }) }
               />
               <FormControl fullWidth className={ styles.input }>
@@ -117,11 +104,10 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 placeholder="Enter your Medical Institution"
                 label="Medical Institution"
                 fullWidth
-                value={ name }
                 onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, name: event.target.value } }) }
               />
               <FormControl variant="outlined" fullWidth className={ styles.input }>
-                <InputLabel>Role</InputLabel>
+                <InputLabel>{ 'Role' }</InputLabel>
                 <Select
                   value={ role }
                   onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, role: event.target.value as string } }) }
@@ -140,7 +126,6 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 multiline
                 rows={ 3 }
                 rowsMax={ 3 }
-                value={ address }
                 onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, address: event.target.value } }) }
               />
               <TextField
@@ -149,19 +134,17 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 placeholder="Enter your Department"
                 label="Department"
                 fullWidth
-                value={ department }
                 onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, department: event.target.value } }) }
               />
             </Grid>
           </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button variant='contained' onClick={ () => onClose() }>Close</Button>
-          <Button variant='contained' onClick={ submit } color='primary'>Update Info</Button>
-        </DialogActions>
-      </Dialog>
+          <Grid item style={ { marginTop: 10, marginBottom: 10 } }>
+            <Button variant='contained' onClick={ submit } disabled={ isSubmitting } color='primary'>{ 'Create Account' }</Button>
+          </Grid>
+        </Grid>
+      </Container>
     </React.Fragment>
   )
 }
 
-export default withResubAutoSubscriptions(ProfileUpdatePage)
+export default RegisterInfoPage

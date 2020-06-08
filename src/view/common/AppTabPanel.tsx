@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC } from 'react';
 import { Box, Typography } from '@material-ui/core'
 
 interface AppTabPanelProps {
@@ -8,26 +8,29 @@ interface AppTabPanelProps {
   value: number;
 }
 
-export default function AppTabPanel(props: AppTabPanelProps) {
-  const { children, value, index, ...other } = props;
-
+const AppTabPanel: FC<AppTabPanelProps> = ({ children, value, index, ...other }) => {
   return (
     <Typography
       component="div"
       role="apptabpanel"
-      hidden={value !== index}
-      id={`full-width-apptabpanel-${index}`}
-      aria-labelledby={`full-width-tab-${index}`}
-      {...other}
+      hidden={ value !== index }
+      id={ `full-width-apptabpanel-${index}` }
+      aria-labelledby={ `full-width-tab-${index}` }
+      { ...other }
     >
-      {value === index && <Box p={3}>{children}</Box>}
+      { value === index && <Box p={ 3 }>{ children }</Box> }
     </Typography>
   )
 }
 
-export function tabProps(index: any) {
+const tabProps = (index: any) => {
   return {
     id: `full-width-tab-${index}`,
     'aria-controls': `full-width-apptabpanel-${index}`,
   };
+}
+
+export default AppTabPanel
+export {
+  tabProps
 }

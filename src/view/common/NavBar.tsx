@@ -1,26 +1,38 @@
-import React from 'react'
+import React, { FC, useEffect, useState, useRef } from 'react'
 import { NavLink, useHistory } from 'react-router-dom'
-import { Avatar, Typography, useMediaQuery, Container, Button, Popper, Grow, Paper, ClickAwayListener, MenuList, MenuItem } from '@material-ui/core'
-import UC from '../../connections/UserConnection'
-
-import icon from '../../resources/logo/icon.svg'
-import title from '../../resources/logo/title.svg'
-import maleAvatar from '../../resources/images/maleAvatar.png'
-import femaleAvatar from '../../resources/images/femaleAvatar.png'
+import {
+  Avatar, Typography, useMediaQuery, Container, Button,
+  Popper, Grow, Paper, ClickAwayListener, MenuList,
+  MenuItem
+} from '@material-ui/core'
+import { withResubAutoSubscriptions } from 'resub'
 
 import './navbar.css'
+import { AuthUtil } from '../../utils'
+import { UserStore } from '../../stores'
+import { title, icon } from '../../resources/logo'
+import { maleAvatar, femaleAvatar } from '../../resources/images'
 
-const links: LinkRoute[] =  [
+const links: LinkRoute[] = [
   { path: '/dashboard', name: 'Home' },
   { path: '/patient', name: 'Patient' },
   { path: '/appointment', name: 'Appointment' }
 ]
 
-export default function NavBar() {
+interface ComponentProp {
+
+}
+
+const NavBar: FC<ComponentProp> = () => {
   const history = useHistory()
-  const user = UC.currentUser
-  const [open, setOpen] = React.useState(false);
-  const anchorRef = React.useRef<HTMLButtonElement>(null);
+  const user = UserStore.getUser()
+
+  const [ open, setOpen ] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    return UserStore.unsubscribe
+  }, [])
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -42,58 +54,61 @@ export default function NavBar() {
   }
 
   const logout = () => {
-    UC.logout()
-    history.replace('/login')
+    // UC.logout()
+    AuthUtil.signOut()
+      .then(() => {
+        history.replace('/login')
+      })
   }
 
-  const renderNavLinkLists = (): JSX.Element[]  => 
+  const renderNavLinkLists = (): JSX.Element[] =>
     links.map(link => renderNavLink(link, history.location.pathname.includes(link.path)))
 
-  const renderNavLink = ({path, name}: LinkRoute, isCurrent: boolean): JSX.Element => (
+  const renderNavLink = ({ path, name }: LinkRoute, isCurrent: boolean): JSX.Element => (
     isCurrent
-    ? <NavLink key={'l' + name} aria-current='page' className='highlighted' to={path}>{name}
+      ? <NavLink key={ 'l' + name } aria-current='page' className='highlighted' to={ path }>{ name }
         <span className='underline'></span>
       </NavLink>
-    : <NavLink key={'l' + name} className='navitem' to={path}>{name}</NavLink>
+      : <NavLink key={ 'l' + name } className='navitem' to={ path }>{ name }</NavLink>
   )
 
-  return(
+  return (
     <header className='header'>
       <Container>
         <div className='top'>
           <a className='brand' href='/dashboard'>
-            <img src={icon} className='brand-icon' alt='logo' height='20'/>
-            <img src={title} alt='title' height='30'/>
+            <img src={ icon } className='brand-icon' alt='logo' height='20' />
+            <img src={ title } alt='title' height='30' />
           </a>
           <nav className='navbar'>
             { renderNavLinkLists() }
           </nav>
           <div className='leftBar'>
             <Button
-              ref={anchorRef}
-              aria-controls={open ? 'menu-list-grow' : undefined}
+              ref={ anchorRef }
+              aria-controls={ open ? 'menu-list-grow' : undefined }
               aria-haspopup="true"
-              onClick={handleToggle}
+              onClick={ handleToggle }
             >
-              <Typography style={{display: useMediaQuery('(min-width: 600px')? 'flex': 'none', color: 'white'}}>{user?.username}</Typography>
-              <Avatar src={user?.detail?.gender === 'F'? femaleAvatar: maleAvatar} style={{marginLeft: 10}}/>
+              <Typography style={ { display: useMediaQuery('(min-width: 600px') ? 'flex' : 'none', color: 'white', textTransform: 'capitalize' } }>{ user?.username }</Typography>
+              <Avatar src={ user?.gender === 'F' ? femaleAvatar : maleAvatar } style={ { marginLeft: 10 } } />
             </Button>
-            <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
-              {({ TransitionProps, placement }) => (
+            <Popper open={ open } anchorEl={ anchorRef.current } role={ undefined } transition disablePortal>
+              { ({ TransitionProps, placement }) => (
                 <Grow
-                  {...TransitionProps}
-                  style={{ transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom' }}
+                  { ...TransitionProps }
+                  style={ { transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom' } }
                 >
                   <Paper>
-                    <ClickAwayListener onClickAway={handleClose}>
-                      <MenuList autoFocusItem={open} id="menu-list-grow" onKeyDown={handleListKeyDown}>
-                        <MenuItem onClick={() => history.replace('/profile')}>Profile</MenuItem>
-                        <MenuItem onClick={logout}>Logout</MenuItem>
+                    <ClickAwayListener onClickAway={ handleClose }>
+                      <MenuList autoFocusItem={ open } id="menu-list-grow" onKeyDown={ handleListKeyDown }>
+                        <MenuItem onClick={ () => history.replace('/profile') }>Profile</MenuItem>
+                        <MenuItem onClick={ logout }>Logout</MenuItem>
                       </MenuList>
                     </ClickAwayListener>
                   </Paper>
                 </Grow>
-              )}
+              ) }
             </Popper>
           </div>
         </div>
@@ -106,3 +121,5 @@ interface LinkRoute {
   path: string
   name: string
 }
+
+export default withResubAutoSubscriptions(NavBar)
