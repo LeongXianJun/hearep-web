@@ -9,12 +9,15 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
+    "firebase": "^7.14.5",
     "material-table": "^1.57.2",
+    "qs": "^6.9.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.1",
     "react-swipeable-views": "^0.13.9",
+    "resub": "^2.3.0",
     "typescript": "^3.7.5"
   },
   "scripts": {
@@ -43,6 +46,7 @@
     "@types/loadable__component": "^5.10.0",
     "@types/material-ui": "^0.21.7",
     "@types/node": "^12.12.34",
+    "@types/qs": "^6.9.3",
     "@types/react": "^16.9.32",
     "@types/react-dom": "^16.9.6",
     "@types/react-router-dom": "^5.1.3",
