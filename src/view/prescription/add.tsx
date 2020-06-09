@@ -23,6 +23,7 @@ const AddPrescriptionPage: FC<PageProp> = () => {
 
   const [ illness, setIllness ] = useState('')
   const [ clinicalOpinion, setClinicalOpinion ] = useState('')
+  const [ refillDate, setRefillDate ] = useState('')
   const [ medicines, setMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
 
   useEffect(() => {
@@ -52,7 +53,7 @@ const AddPrescriptionPage: FC<PageProp> = () => {
             if (validMedicines.length > 0) {
               await HealthRecordStore.insertHealthRecord({
                 type: 'Medication Record', patientId: patient.id, date,
-                prescriptionId: hr.hrid, medications: validMedicines
+                prescriptionId: hr.hrid, refillDate: new Date(refillDate), medications: validMedicines
               })
             }
           }
@@ -222,6 +223,16 @@ const AddPrescriptionPage: FC<PageProp> = () => {
                 </Grid>
               )
             }
+            <Grid item xs={ 12 }>
+              <TextField
+                required
+                variant="outlined"
+                placeholder="Enter the Date to refill medecine"
+                fullWidth
+                label={ 'Refill Date' }
+                onChange={ event => setRefillDate(event.target.value) }
+              />
+            </Grid>
           </Grid>
         </CardContent>
       </Card>

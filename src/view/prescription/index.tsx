@@ -153,6 +153,7 @@ const PatientPage: FC<PageProp> = () => {
       <Grid key={ 'md-' + index } item xs={ 12 }>
         <AppExpansion
           title={ 'Medication Record on ' + mr.date.toDateString() }
+          subtitle={ 'Refill on ' + mr.refillDate.toDateString() }
         >
           <Table>
             <TableHead>
@@ -180,6 +181,7 @@ const PatientPage: FC<PageProp> = () => {
   }
 
   function AddMedicationRecordDialog() {
+    const [ refillDate, setRefillDate ] = useState('')
     const [ medicines, setMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
     const addMedicine = () => {
       setMedicines([ ...medicines, { medicine: '', dosage: 0, usage: '' } ])
@@ -210,7 +212,7 @@ const PatientPage: FC<PageProp> = () => {
       if (patient && record) {
         HealthRecordStore.insertHealthRecord({
           type: 'Medication Record', prescriptionId: record.id,
-          date: new Date(), patientId: patient?.id,
+          date: new Date(), patientId: patient?.id, refillDate: new Date(refillDate),
           medications: medicines
         }).then(() => {
           setOpen(false)
@@ -220,7 +222,25 @@ const PatientPage: FC<PageProp> = () => {
 
     return (
       <Dialog open={ open } onClose={ cancel } fullScreen={ fullScreen } maxWidth='md'>
-        <DialogTitle>{ 'New Medication Record' }</DialogTitle>
+        <DialogTitle>
+          <Grid container direction='row'>
+            <Grid item xs={ 8 }>
+              <Typography variant='h4'>{ 'New Medication Record' }</Typography>
+            </Grid>
+            <Grid item xs={ 4 }>
+              <TextField
+                required
+                variant="outlined"
+                size='small'
+                placeholder="Enter the Date to refill medecine"
+                fullWidth
+                label={ 'Refill Date' }
+                onChange={ event => setRefillDate(event.target.value) }
+              />
+            </Grid>
+          </Grid>
+        </DialogTitle>
+        <Divider />
         <DialogContent>
           <Grid container direction='column'>
             {

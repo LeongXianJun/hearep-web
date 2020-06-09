@@ -9,21 +9,33 @@ interface ComponentProp {
   children: JSX.Element[] | JSX.Element
   defaultExpanded?: boolean
   title?: string
+  subtitle?: string
   expandIcon?: React.ReactNode
   actions?: JSX.Element
 }
 
-const AppExpansion: FC<ComponentProp> = ({ children, defaultExpanded, title, expandIcon, actions }) => {
+const AppExpansion: FC<ComponentProp> = ({ children, defaultExpanded, title, subtitle, expandIcon, actions }) => {
   return (
     <ExpansionPanel defaultExpanded={ defaultExpanded } style={ { width: '100%' } }>
       <ExpansionPanelSummary
         expandIcon={ expandIcon ?? <ExpandMoreIcon /> }
       >
-        {
-          title
-            ? <Typography>{ title }</Typography>
-            : null
-        }
+        <Grid container direction='row'>
+          {
+            title
+              ? <Grid item xs={ 12 }>
+                <Typography variant='h6'>{ title }</Typography>
+              </Grid>
+              : null
+          }
+          {
+            subtitle
+              ? <Grid item xs={ 12 }>
+                <Typography variant='subtitle1'>{ subtitle }</Typography>
+              </Grid>
+              : null
+          }
+        </Grid>
       </ExpansionPanelSummary>
       <ExpansionPanelDetails>
         <Grid container direction='column' spacing={ 1 }>

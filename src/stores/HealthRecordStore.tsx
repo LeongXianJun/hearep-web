@@ -35,6 +35,9 @@ class HealthRecordStore extends StoreBase {
           }
         }).then(data => {
           if (data.errors) {
+            this.healthPrescriptions = []
+            this.labTestResults = []
+            this.trigger(HealthRecordStore.HRKey)
             throw new Error(data.errors)
           } else {
             this.healthPrescriptions = data[ 'Health Prescription' ].map((hr: any) => new HealthPrescription(hr))
@@ -47,7 +50,7 @@ class HealthRecordStore extends StoreBase {
       }
     })
 
-  insertHealthRecord = (input: { patientId: string, date: Date } & ({ type: 'Health Prescription', appId: string, illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, medications: Medication[] } | { type: 'Lab Test Result', appId: string, title: string, comment: string, data: LabTestField[] })) =>
+  insertHealthRecord = (input: { patientId: string, date: Date } & ({ type: 'Health Prescription', appId: string, illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', appId: string, title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         return await fetch('http://localhost:8001/healthrecords/insert', {
@@ -72,6 +75,9 @@ class HealthRecordStore extends StoreBase {
           if (result.errors) {
             throw new Error(result.errors)
           } else if (result[ 'response' ].includes('success')) {
+            if (this.selectedRecord?.type === 'Health Prescription' && input.type === 'Medication Record') {
+              this.selectedRecord = { ...this.selectedRecord, medicationRecords: [ ...this.selectedRecord.medicationRecords, new MedicationRecord({ ...input }) ] }
+            }
             return { hrid: result.docId }
           }
         })
@@ -81,7 +87,7 @@ class HealthRecordStore extends StoreBase {
       }
     })
 
-  updateHealthRecord = ({ type, ...input }: { id: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
+  updateHealthRecord = ({ type, ...input }: { id: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch('http://localhost:8001/healthrecords/update', {
@@ -213,12 +219,14 @@ class HealthPrescription extends HealthRecord {
 class MedicationRecord extends HealthRecord {
   type: 'Medication Record' = 'Medication Record'
   prescriptionId: string
+  refillDate: Date
   medications: Medication[]
 
   constructor(input: any) {
     super({ ...input })
-    const { prescriptionId, medications } = input
+    const { prescriptionId, refillDate, medications } = input
     this.prescriptionId = prescriptionId
+    this.refillDate = new Date(refillDate)
     this.medications = (medications as Array<any>).map(m => new Medication(m))
   }
 }
