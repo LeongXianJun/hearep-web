@@ -1,47 +1,74 @@
-import React from 'react'
+import React, { FC, useEffect } from 'react'
+import {
+  Grid, Card, CardHeader, CardContent, Breadcrumbs,
+  Typography, Link
+} from '@material-ui/core'
+import { useHistory } from 'react-router-dom'
+import { withResubAutoSubscriptions } from 'resub'
+
 import { AppContainer, AppTable } from '../common'
-import { Grid, Card, CardHeader, CardContent, Breadcrumbs, 
-  Typography, Link } from '@material-ui/core'
-import RC, { LabTestResult } from '../../connections/RecordConnection'
- 
-export default function LabTestPage() {
-  const record = RC.selectedRecord
+import { UserStore, HealthRecordStore, LabTestResult } from '../../stores'
+
+interface PageProp {
+
+}
+
+const LabTestPage: FC<PageProp> = () => {
+  const history = useHistory()
+  const isReady = UserStore.ready()
+  const patient = HealthRecordStore.getSelectedPatient()
+  const record = HealthRecordStore.getSelectedLTRRecord()
+
+  useEffect(() => {
+    if (isReady) {
+      if (patient === undefined) {
+        history.replace('/patient')
+      }
+      if (record === undefined) {
+        history.replace('/patient/detail')
+      }
+    }
+  }, [ isReady, patient, record ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
     { path: '/patient', text: 'Patient' },
-    { path: '/patient/detail', text: record.name },
-    { path: '/labTest', text: 'Lab Test on ' + record.date.toDateString() }
+    { path: '/patient/detail', text: patient?.username },
+    { path: '/labTest', text: 'Lab Test on ' + record?.date.toDateString() }
   ]
 
-  return(
-    <AppContainer>
-      <Breadcrumbs maxItems={3} aria-label="breadcrumb">
+  return (
+    <AppContainer isLoading={ isReady === false }>
+      <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
         {
-          breadcrumbs.map(({path, text}, index, arr) => (
+          breadcrumbs.map(({ path, text }, index, arr) => (
             index === arr.length - 1
-            ? <Typography key={'l-' + index} color="textPrimary">{text}</Typography>
-            : <Link key={'l-' + index} color="inherit" href={path}>
-                {text}
+              ? <Typography key={ 'l-' + index } color="textPrimary">{ text }</Typography>
+              : <Link key={ 'l-' + index } color="inherit" onClick={ () => history.push(path) }>
+                { text }
               </Link>
           ))
-        }        
+        }
       </Breadcrumbs>
-      <Grid container direction='row' justify='center' spacing={3} style={{marginTop: 5}}>
-        <Grid item xs={12} md={4}>
-          { record.type === 'lab test result' && LabTestDetail({data: record}) }
-        </Grid>
-        <Grid item xs={12} md={8}>
-          { record.type === 'lab test result' && LabTestResult({data: record}) }
-        </Grid>
-      </Grid>
+      {
+        record
+          ? <Grid container direction='row' justify='center' spacing={ 3 } style={ { marginTop: 5 } }>
+            <Grid item xs={ 12 } md={ 4 }>
+              { LabTestDetail({ detail: record }) }
+            </Grid>
+            <Grid item xs={ 12 } md={ 8 }>
+              { LabTestResult({ result: record.data }) }
+            </Grid>
+          </Grid>
+          : <></>
+      }
     </AppContainer>
   )
 
   function LabTestDetail(props: LabTestDetailProps) {
-    const { data } = props
+    const { detail: data } = props
     const details = [
-      { field: 'Patient Name', val: data.name },
+      { field: 'Patient Name', val: patient?.username },
       { field: 'Test Title', val: data.title },
       { field: 'Test Date', val: data.date.toDateString() },
       { field: 'Comment', val: data.comment }
@@ -49,17 +76,17 @@ export default function LabTestPage() {
 
     return (
       <Card>
-        <CardHeader title={'Lab Test Information'}/>
+        <CardHeader title={ 'Lab Test Information' } />
         <CardContent>
-          <Grid container direction='column' spacing={2}>
+          <Grid container direction='column' spacing={ 2 }>
             {
-              details.map(({field, val}) => 
-                <Grid item container direction='row' xs={12}>
-                  <Grid item xs={12} sm={4}>
-                    <Typography>{field}</Typography>
+              details.map(({ field, val }) =>
+                <Grid item container direction='row' xs={ 12 }>
+                  <Grid item xs={ 12 } sm={ 4 }>
+                    <Typography>{ field }</Typography>
                   </Grid>
-                  <Grid item xs={12} sm={8}>
-                    <Typography>{val}</Typography>
+                  <Grid item xs={ 12 } sm={ 8 }>
+                    <Typography>{ val }</Typography>
                   </Grid>
                 </Grid>
               )
@@ -72,26 +99,28 @@ export default function LabTestPage() {
   }
 
   function LabTestResult(props: LabTestResultProps) {
-    const { data: { data } } = props
+    const { result } = props
     const columns = [
       { title: 'Test Component', field: 'field' },
-      { title: 'Result', field: 'result' },
+      { title: 'Value', field: 'value' },
       { title: 'Normal Range', field: 'normalRange' }
     ]
     return (
       <AppTable
-        title={'Lab Test Result'}
-        columns={columns}
-        data={data}
+        title={ 'Lab Test Result' }
+        columns={ columns }
+        data={ result }
       />
-      )
-    }
+    )
   }
-  
+}
+
 interface LabTestDetailProps {
-  data: LabTestResult
+  detail: LabTestResult
 }
 
 interface LabTestResultProps {
-  data: LabTestResult
+  result: LabTestResult[ 'data' ]
 }
+
+export default withResubAutoSubscriptions(LabTestPage)
