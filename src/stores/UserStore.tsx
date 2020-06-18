@@ -195,6 +195,38 @@ class UserStore extends StoreBase {
       }
     })
 
+  updateWorkingTime = (workingTime: WorkingTime) =>
+    this.getToken().then(async userToken => {
+      if (userToken) {
+        await fetch('http://localhost:8001/workingtime/update', {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: qs.stringify({ userToken, workingTime })
+        }).then(response => {
+          if (response.ok) {
+            return response.json()
+          } else {
+            throw new Error(response.status + ': (' + response.statusText + ')')
+          }
+        }).then(result => {
+          if (result.errors) {
+            throw new Error(result.errors)
+          } else if ((result.response as string).includes('success')) {
+            if (this.user) {
+              this.user = new MedicalStaff({ ...this.user, workingTime })
+              this.trigger(UserStore.UserKey)
+            }
+          }
+        })
+          .catch(err => Promise.reject(new Error(err)))
+      } else {
+        throw new Error('No Token Found')
+      }
+    })
+
   // variables
   static UserKey = 'UserKey'
   @autoSubscribeWithKey('UserKey')
@@ -240,11 +272,19 @@ class UR {
 class MedicalStaff extends UR {
   type: 'Medical Staff' = 'Medical Staff'
   medicalInstituition: MedicalInstituition
+  workingTime?: WorkingTime
 
   constructor(input: any) {
     super({ ...input })
-    const { medicalInstituition } = input
+    const { medicalInstituition, workingTime } = input
     this.medicalInstituition = new MedicalInstituition({ ...medicalInstituition })
+    this.workingTime = workingTime
+      ? workingTime.type === 'byTime'
+        ? new ByTimeWT(workingTime)
+        : workingTime.type === 'byNumber'
+          ? new ByNumberWT(workingTime)
+          : undefined
+      : undefined
   }
 }
 
@@ -259,7 +299,6 @@ class Patient extends UR {
     this.phoneNumber = phoneNumber
     this.occupation = occupation
   }
-
 }
 
 class MedicalInstituition {
@@ -268,12 +307,48 @@ class MedicalInstituition {
   address: string
   department: string
 
-  constructor(input: { role: string, name: string, address: string, department: string }) {
+  constructor(input: any) {
     const { role, name, address, department } = input
     this.role = role
     this.name = name
     this.address = address
     this.department = department
+  }
+}
+
+type WorkingTime = ByTimeWT | ByNumberWT
+
+class ByTimeWT {
+  type: 'byTime' = 'byTime'
+  timeslots: {
+    day: 0 | 1 | 2 | 3 | 4 | 5 | 6
+    slots: number[]
+  }[]
+
+  constructor(input: any) {
+    const { workingTime: { timeslots } } = input
+    this.timeslots = (timeslots as Array<any>).map(ts => ({
+      day: ts.day,
+      slots: ts.slots
+    }))
+  }
+}
+
+class ByNumberWT {
+  type: 'byNumber' = 'byNumber'
+  timeslots: {
+    day: 0 | 1 | 2 | 3 | 4 | 5 | 6
+    startTime: Date
+    endTime: Date
+  }[]
+
+  constructor(input: any) {
+    const { workingTime: { timeslots } } = input
+    this.timeslots = (timeslots as Array<any>).map(ts => ({
+      day: ts.day,
+      startTime: new Date(ts.startTime),
+      endTime: new Date(ts.endTime),
+    }))
   }
 }
 
