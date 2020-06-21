@@ -53,13 +53,11 @@ const NavBar: FC<ComponentProp> = () => {
     }
   }
 
-  const logout = () => {
-    // UC.logout()
+  const logout = () =>
     AuthUtil.signOut()
       .then(() => {
         history.replace('/login')
       })
-  }
 
   const renderNavLinkLists = (): JSX.Element[] =>
     links.map(link => renderNavLink(link, history.location.pathname.includes(link.path)))
@@ -90,7 +88,9 @@ const NavBar: FC<ComponentProp> = () => {
               aria-haspopup="true"
               onClick={ handleToggle }
             >
-              <Typography style={ { display: useMediaQuery('(min-width: 600px') ? 'flex' : 'none', color: 'white', textTransform: 'capitalize' } }>{ user?.username }</Typography>
+              <Typography style={ { display: useMediaQuery('(min-width: 600px') ? 'flex' : 'none', color: history.location.pathname.includes('profile') ? 'rgb(255, 199, 199)' : 'white', textTransform: 'capitalize' } }>
+                { user?.username }
+              </Typography>
               <Avatar src={ user?.gender === 'F' ? femaleAvatar : maleAvatar } style={ { marginLeft: 10 } } />
             </Button>
             <Popper open={ open } anchorEl={ anchorRef.current } role={ undefined } transition disablePortal>
@@ -102,8 +102,8 @@ const NavBar: FC<ComponentProp> = () => {
                   <Paper>
                     <ClickAwayListener onClickAway={ handleClose }>
                       <MenuList autoFocusItem={ open } id="menu-list-grow" onKeyDown={ handleListKeyDown }>
-                        <MenuItem onClick={ () => history.replace('/profile') }>Profile</MenuItem>
-                        <MenuItem onClick={ logout }>Logout</MenuItem>
+                        <MenuItem onClick={ () => history.replace('/profile') }>{ 'Profile' }</MenuItem>
+                        <MenuItem onClick={ logout }>{ 'Logout' }</MenuItem>
                       </MenuList>
                     </ClickAwayListener>
                   </Paper>

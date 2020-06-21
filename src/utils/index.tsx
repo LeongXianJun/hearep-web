@@ -1,5 +1,2 @@
-import AuthUtil from './Auth'
-
-export {
-  AuthUtil
-}
+export { default as AuthUtil } from './Auth'
+export { default as CommonUtil } from './Common'

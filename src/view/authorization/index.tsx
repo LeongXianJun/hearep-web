@@ -89,7 +89,6 @@ const AuthorizationPage: FC<PageProp> = () => {
     const [ email, setEmail ] = React.useState('')
     const [ password, setPassword ] = React.useState('')
     const [ isSubmitting, setIsSubmitting ] = useState(false)
-    const [ err, setErr ] = React.useState('')
 
     const submit = () => {
       setIsSubmitting(true)
@@ -98,7 +97,7 @@ const AuthorizationPage: FC<PageProp> = () => {
           setIsSubmitting(false)
           history.replace('/dashboard')
         })
-        .catch(err => setErr(err))
+        .catch(err => console.log(err))
     }
 
     return (

@@ -24,14 +24,14 @@ class UserStore extends StoreBase {
       if (this.isRegistering === false) {
         this.fetchUser().then(() => {
           this.isReady = true
-          this.trigger(UserStore.IsReadyKey)
+          this.trigger(UserStore.UReadyKey)
         })
       }
     } else {
       this.firebaseUser = undefined
       // console.log('2', this.firebaseUser)
       this.isReady = true
-      this.trigger(UserStore.IsReadyKey)
+      this.trigger(UserStore.UReadyKey)
     }
   })
 
@@ -59,7 +59,7 @@ class UserStore extends StoreBase {
         }).then(data => {
           this.user = new MedicalStaff(data)
           this.trigger(UserStore.UserKey)
-        }).catch(err => Promise.reject(new Error('Fetch User: ' + err)))
+        }).catch(err => Promise.reject(new Error('Fetch User: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -88,7 +88,7 @@ class UserStore extends StoreBase {
             this.patients = data.map((p: any) => new Patient(p))
             this.trigger(UserStore.PatientKey)
           }
-        }).catch(err => Promise.reject(new Error('Fetch Patient: ' + err)))
+        }).catch(err => Promise.reject(new Error('Fetch Patient: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -122,7 +122,7 @@ class UserStore extends StoreBase {
             throw new Error(result.errors)
           }
         })
-          .catch(err => new Error(err))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -160,7 +160,7 @@ class UserStore extends StoreBase {
             }
           }
         })
-          .catch(err => Promise.reject(new Error(err)))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -189,7 +189,7 @@ class UserStore extends StoreBase {
             throw new Error(result.errors)
           }
         })
-          .catch(err => new Error(err))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -221,7 +221,7 @@ class UserStore extends StoreBase {
             }
           }
         })
-          .catch(err => Promise.reject(new Error(err)))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -240,8 +240,8 @@ class UserStore extends StoreBase {
     return this.patients
   }
 
-  static IsReadyKey = 'IsReadyKey'
-  @autoSubscribeWithKey('IsReadyKey')
+  static UReadyKey = 'UReadyKey'
+  @autoSubscribeWithKey('UReadyKey')
   ready() {
     return this.isReady
   }
@@ -326,7 +326,7 @@ class ByTimeWT {
   }[]
 
   constructor(input: any) {
-    const { workingTime: { timeslots } } = input
+    const { timeslots } = input
     this.timeslots = (timeslots as Array<any>).map(ts => ({
       day: ts.day,
       slots: ts.slots
@@ -343,7 +343,7 @@ class ByNumberWT {
   }[]
 
   constructor(input: any) {
-    const { workingTime: { timeslots } } = input
+    const { timeslots } = input
     this.timeslots = (timeslots as Array<any>).map(ts => ({
       day: ts.day,
       startTime: new Date(ts.startTime),
@@ -354,6 +354,8 @@ class ByNumberWT {
 
 export {
   MedicalStaff,
-  Patient
+  Patient,
+  ByTimeWT,
+  ByNumberWT
 }
 export default new UserStore()
