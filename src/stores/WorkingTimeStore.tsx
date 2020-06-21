@@ -5,10 +5,12 @@ import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 @AutoSubscribeStore
 class TimeIntervalStore extends StoreBase {
   timeInterval: Date[]
+  isReady: boolean
 
   constructor() {
     super()
     this.timeInterval = []
+    this.isReady = false
   }
 
   private getToken = () => UserStore.getToken()
@@ -35,11 +37,11 @@ class TimeIntervalStore extends StoreBase {
           if (result.errors) {
             throw new Error(result.errors)
           } else {
+            this.isReady = true
             this.timeInterval = (result as Array<any>).map(r => new Date(r))
-            this.trigger(TimeIntervalStore.getTimeIntevalKey)
+            this.trigger([ TimeIntervalStore.getTimeIntevalKey, TimeIntervalStore.WTReadyKey ])
           }
-        })
-          .catch(err => new Error(err))
+        }).catch(err => Promise.reject(new Error('Fetch Time Interval: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -50,6 +52,12 @@ class TimeIntervalStore extends StoreBase {
   @autoSubscribeWithKey('getTimeIntevalKey')
   getTimeInterval() {
     return this.timeInterval
+  }
+
+  static WTReadyKey = 'WTReadyKey'
+  @autoSubscribeWithKey('WTReadyKey')
+  ready() {
+    return this.isReady
   }
 }
 

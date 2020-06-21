@@ -13,6 +13,8 @@ class AppointmentStore extends StoreBase {
     'Cancelled': Appointment[]
   }
   selectedAppointment: Appointment | undefined
+  patientAppointment: Appointment | undefined
+  isReady: boolean
 
   constructor() {
     super()
@@ -24,12 +26,13 @@ class AppointmentStore extends StoreBase {
       'Completed': [],
       'Cancelled': []
     }
+    this.isReady = false
   }
 
   private getToken = () => UserStore.getToken()
 
   // get all appointments
-  getAllAppointments = () =>
+  fetchAllAppointments = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch('http://localhost:8001/appointment/medicalstaff', {
@@ -46,6 +49,7 @@ class AppointmentStore extends StoreBase {
             throw new Error(response.status + ': (' + response.statusText + ')')
           }
         }).then(data => {
+          this.isReady = true
           if (data.errors) {
             this.groupedAppointments = {
               'Pending': [],
@@ -55,7 +59,7 @@ class AppointmentStore extends StoreBase {
               'Completed': [],
               'Cancelled': []
             }
-            this.trigger(AppointmentStore.getGroupedAppointmentsKey)
+            this.trigger([ AppointmentStore.GroupedAppointmentsKey, AppointmentStore.AReadyKey ])
             throw new Error(data.errors)
           } else {
             const createAppointment = (app: any) =>
@@ -70,9 +74,45 @@ class AppointmentStore extends StoreBase {
               'Completed': data[ 'Completed' ].map(createAppointment),
               'Cancelled': data[ 'Cancelled' ].map(createAppointment)
             }
-            this.trigger(AppointmentStore.getGroupedAppointmentsKey)
+            this.trigger([ AppointmentStore.GroupedAppointmentsKey, AppointmentStore.AReadyKey ])
           }
-        }).catch(err => Promise.reject(new Error('Fetch Health Records: ' + err)))
+        }).catch(err => Promise.reject(new Error('Fetch Health Records: ' + err.message)))
+      } else {
+        throw new Error('No Token Found')
+      }
+    })
+
+  // get an appointment
+  fetchPatientAppointment = (appId: string) =>
+    this.getToken().then(async userToken => {
+      if (userToken) {
+        await fetch('http://localhost:8001/appointment/get', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: qs.stringify({ userToken, appId })
+        }).then(response => {
+          if (response.ok) {
+            return response.json()
+          } else {
+            throw new Error(response.status + ': (' + response.statusText + ')')
+          }
+        }).then(data => {
+          if (data.errors) {
+            this.patientAppointment = undefined
+            this.trigger(AppointmentStore.PatientAppointmentKey)
+            throw new Error(data.errors)
+          } else {
+            const createAppointment = (app: any) =>
+              app.type === 'byTime'
+                ? new ByTimeApp(app)
+                : new ByNumberApp(app)
+            this.patientAppointment = createAppointment(data)
+            this.trigger(AppointmentStore.PatientAppointmentKey)
+          }
+        }).catch(err => Promise.reject(new Error('Fetch Health Records: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -104,69 +144,106 @@ class AppointmentStore extends StoreBase {
           if (result.errors) {
             throw new Error(result.errors)
           } else if ((result.response as string).includes('success')) {
+            const targetApp = this.groupedAppointments.Pending.find(a => a.id === input.id)
+            if (targetApp) {
+              this.upApp(targetApp, 'Pending', input.status)
+            }
             Promise.resolve()
           }
         })
-          .catch(err => Promise.reject(new Error(err)))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
     })
 
-  static getGroupedAppointmentsKey = 'getGroupedAppointmentsKey'
-  @autoSubscribeWithKey('getGroupedAppointmentsKey')
+  static GroupedAppointmentsKey = 'GroupedAppointmentsKey'
+  @autoSubscribeWithKey('GroupedAppointmentsKey')
   getGroupedAppointments() {
     return this.groupedAppointments
   }
 
-  static getSelectedAppointmentKey = 'getSelectedAppointmentKey'
-  @autoSubscribeWithKey('getSelectedAppointmentKey')
+  static SelectedAppointmentKey = 'SelectedAppointmentKey'
+  @autoSubscribeWithKey('SelectedAppointmentKey')
   getSelectedAppointment() {
     return this.selectedAppointment
   }
+
+  static PatientAppointmentKey = 'PatientAppointmentKey'
+  @autoSubscribeWithKey('PatientAppointmentKey')
+  getPatientAppointment() {
+    return this.patientAppointment
+  }
+
+  static AReadyKey = 'AReadyKey'
+  @autoSubscribeWithKey('AReadyKey')
+  ready() {
+    return this.isReady
+  }
+
+  setSelectedAppointment(app: Appointment) {
+    this.selectedAppointment = app
+  }
+
+  upApp(targetApp: Appointment, from: Appointment[ 'status' ], to: Appointment[ 'status' ]) {
+    this.groupedAppointments = {
+      ...this.groupedAppointments,
+      [ from ]: [
+        ...this.groupedAppointments.Pending.filter(p => p.id !== targetApp.id)
+      ],
+      [ to ]: [ ...this.groupedAppointments.Accepted, targetApp ]
+    }
+    this.trigger(AppointmentStore.GroupedAppointmentsKey)
+  }
 }
 
-class Appointment {
+class ByTimeApp {
   id: string
   patientId: string
   medicalStaffId: string
   date: Date
   address: string
+  type: 'byTime' = 'byTime'
+  status: 'Pending' | 'Accepted' | 'Rejected' | 'Completed' | 'Cancelled'
+  time: Date
 
   constructor(input: any) {
-    const { id, patientId, medicalStaffId, date, address } = input
+    const { id, patientId, medicalStaffId, date, address, status, time } = input
     this.id = id
     this.patientId = patientId
     this.medicalStaffId = medicalStaffId
     this.date = new Date(date)
     this.address = address
-  }
-}
-
-class ByTimeApp extends Appointment {
-  type: 'byTime' = 'byTime'
-  status: 'Pending' | 'Accepted' | 'Rejected' | 'Completed' | 'Rescheduled' | 'Cancelled'
-  time: Date
-
-  constructor(input: any) {
-    super({ ...input })
-    const { status, time } = input
     this.status = status
     this.time = new Date(time)
   }
 }
 
-class ByNumberApp extends Appointment {
+class ByNumberApp {
+  id: string
+  patientId: string
+  medicalStaffId: string
+  date: Date
+  address: string
   type: 'byNumber' = 'byNumber'
   status: 'Waiting' | 'Completed' | 'Cancelled'
   turn: number
 
   constructor(input: any) {
-    super({ ...input })
-    const { status, turn } = input
+    const { id, patientId, medicalStaffId, date, address, status, turn } = input
+    this.id = id
+    this.patientId = patientId
+    this.medicalStaffId = medicalStaffId
+    this.date = new Date(date)
+    this.address = address
     this.status = status
     this.turn = turn
   }
 }
 
+export {
+  ByTimeApp,
+  ByNumberApp
+}
+export type Appointment = ByTimeApp | ByNumberApp
 export default new AppointmentStore()
