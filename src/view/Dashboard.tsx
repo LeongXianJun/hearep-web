@@ -1,13 +1,13 @@
-import React, { FC } from 'react'
+import React, { FC, useEffect } from 'react'
 import { AppContainer, AppExpansion } from './common'
 import {
   Grid, makeStyles, Theme, createStyles, CardContent,
   Card, CardHeader, Table, TableBody, TableRow, TableCell
 } from '@material-ui/core'
-import AC, { Appointment } from '../connections/AppointmentConnection'
-import RC, { Record } from '../connections/RecordConnection'
+import { withResubAutoSubscriptions } from 'resub'
 
 import { NumGraph, TimeGraph } from '../resources/images'
+import { UserStore, HealthRecordStore, MedicationRecord, AppointmentStore, Appointment } from '../stores'
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -26,6 +26,24 @@ interface PageProp {
 
 const Dashboard: FC<PageProp> = () => {
   const styles = useStyles()
+  const isReady = UserStore.ready()
+  const patients = UserStore.getPatients()
+  // nid to replace with something
+  const records = HealthRecordStore.getHealthRecords()
+  const isAppStoreReady = AppointmentStore.ready()
+  const appointments = AppointmentStore.getGroupedAppointments()
+
+  useEffect(() => {
+    if (isReady && patients.length === 0)
+      UserStore.fetchAllPatient()
+        .catch(err => console.log(err))
+  }, [ isReady, patients ])
+
+  useEffect(() => {
+    if (isReady && isAppStoreReady === false)
+      AppointmentStore.fetchAllAppointments()
+        .catch(err => console.log(err))
+  }, [ isReady, appointments, isAppStoreReady ])
 
   const graphs: { title: string, graph: JSX.Element }[] = [
     { title: 'Daily Appointment Handled', graph: <img className={ styles.img } alt='num' src={ NumGraph } /> },
@@ -35,7 +53,7 @@ const Dashboard: FC<PageProp> = () => {
   ]
 
   return (
-    <AppContainer>
+    <AppContainer isLoading={ isReady === false }>
       <Grid container direction='row' justify='center' spacing={ 3 }>
         <Grid item xs={ 12 } sm={ 8 } lg={ 9 } style={ { width: '100%', height: '100%' } }>
           <Card>
@@ -54,7 +72,7 @@ const Dashboard: FC<PageProp> = () => {
           </Card>
         </Grid>
         {
-          AC.appointmentDB.length > 0 || RC.recordDB.length > 0
+          appointments[ 'Waiting' ].length > 0 || appointments[ 'Accepted' ].length > 0 || records[ 'healthPrescriptions' ].length > 0 || records[ 'labTestResults' ].length > 0
             ? <Grid item xs={ 12 } sm={ 4 } lg={ 3 } style={ { width: '100%' } }>
               { leftBar() }
             </Grid>
@@ -63,40 +81,42 @@ const Dashboard: FC<PageProp> = () => {
       </Grid>
     </AppContainer>
   )
+
+  function leftBar() {
+    return (
+      <Card>
+        <CardHeader
+          title='Notification'
+        />
+        <CardContent>
+          { notificationExp('Nearing Appointments', [ ...appointments[ 'Waiting' ], ...appointments[ 'Accepted' ] ]) }
+          { notificationExp('Medication Refill Reminder', records[ 'healthPrescriptions' ].flatMap(hp => hp.medicationRecords)) }
+        </CardContent>
+      </Card>
+    )
+  }
+
+  function notificationExp(title: string, data: (Appointment | MedicationRecord)[]) {
+    return (
+      data.length > 0
+        ? <AppExpansion title={ title }>
+          <Table>
+            <TableBody>
+              {
+                data.map(({ date, patientId }, index) => {
+                  const patient = patients.find(p => p.id === patientId)
+                  return <TableRow key={ 'row-' + index }>
+                    <TableCell>{ patient?.username }</TableCell>
+                    <TableCell>{ date.toDateString() }</TableCell>
+                  </TableRow>
+                })
+              }
+            </TableBody>
+          </Table>
+        </AppExpansion>
+        : null
+    )
+  }
 }
 
-function leftBar() {
-  return (
-    <Card>
-      <CardHeader
-        title='Notification'
-      />
-      <CardContent>
-        { notificationExp('Nearing Appointments', AC.nearing) }
-        { notificationExp('Medication Refill Reminder', RC.recordDB.filter(r => r.type === 'medication record')) }
-      </CardContent>
-    </Card>
-  )
-}
-
-function notificationExp(title: string, data: (Appointment | Record)[]) {
-  return (
-    data.length > 0
-      ? <AppExpansion title={ title }>
-        <Table>
-          <TableBody>
-            {
-              data.map(({ name }, index) =>
-                <TableRow key={ name + 'row-' + index }>
-                  <TableCell>{ name }</TableCell>
-                </TableRow>
-              )
-            }
-          </TableBody>
-        </Table>
-      </AppExpansion>
-      : null
-  )
-}
-
-export default Dashboard
+export default withResubAutoSubscriptions(Dashboard)
