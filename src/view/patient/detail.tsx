@@ -2,15 +2,18 @@ import React, { FC, useEffect } from 'react'
 import {
   makeStyles, Theme, createStyles, Card, Grid,
   Breadcrumbs, Link, Typography, TableBody, Table,
-  TableRow, TableCell, CardHeader, CardContent, Button
+  TableRow, TableCell, CardHeader, CardContent, Button,
+  TableHead
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 
 import { AppContainer, AppExpansion } from '../common'
-import AC from '../../connections/AppointmentConnection'
-import { UserStore, HealthRecordStore, Patient, HealthPrescription, LabTestResult } from '../../stores'
 import { maleAvatar, femaleAvatar, AmountGraph } from '../../resources/images'
+import {
+  UserStore, HealthRecordStore, Patient,
+  AppointmentStore, Appointment, HealthRecord
+} from '../../stores'
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -31,19 +34,21 @@ const PatientDetailPage: FC<PageProp> = () => {
   const styles = useStyles()
   const history = useHistory()
   const isReady = UserStore.ready()
-  const currentUser = UserStore.getUser()
   const patient = HealthRecordStore.getSelectedPatient()
   const healthRecords = HealthRecordStore.getHealthRecords()
+  const isAppStoreReady = AppointmentStore.ready()
+  const appointments = AppointmentStore.getGroupedAppointments()
   const { healthPrescriptions, labTestResults } = healthRecords
+  const Accepted = appointments.Accepted.filter(app => app.patientId === patient?.id)
 
   useEffect(() => {
     if (isReady && patient === undefined) {
       history.replace('/patient')
     }
-  }, [ patient, isReady ])
+  }, [ patient, isReady, history ])
 
   useEffect(() => {
-    if (patient) {
+    if (isReady && patient) {
       HealthRecordStore.fetchPatientRecords(patient.id)
         .catch(err => {
           if (err.message.includes('No more record') === false) {
@@ -51,7 +56,13 @@ const PatientDetailPage: FC<PageProp> = () => {
           }
         })
     }
-  }, [ patient ])
+  }, [ isReady, patient ])
+
+  useEffect(() => {
+    if (isReady && isAppStoreReady === false)
+      AppointmentStore.fetchAllAppointments()
+        .catch(err => console.log(err))
+  }, [ isReady, isAppStoreReady ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -59,20 +70,29 @@ const PatientDetailPage: FC<PageProp> = () => {
     { path: '/patient/detail', text: patient?.username }
   ]
 
-  const appointmentByNumber = AC.appointmentDB
-    .filter(a => a.name === patient?.username && a.medicalStaff === currentUser?.username)
+  const appointmentByNumber = appointments.Waiting
+    .filter(app => app.patientId === patient?.id)
     .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .find(a => a.type === 'byNumber')
+    .find(() => true)
 
-  const viewPrescription = (record: HealthPrescription) => {
-    HealthRecordStore.setSelectedRecord(record)
-    history.push('/prescription')
-  }
+  const view = (type: 'Health Prescription' | 'Lab Test Result', record: HealthRecord) => () =>
+    Promise.resolve(
+      HealthRecordStore.setSelectedRecord(record)
+    ).then(() =>
+      type === 'Health Prescription'
+        ? history.push('/prescription')
+        : history.push('/labTest')
+    )
 
-  const viewLabTest = (record: LabTestResult) => {
-    HealthRecordStore.setSelectedRecord(record)
-    history.push('/labTest')
-  }
+
+  const insertHealthRecord = (appointment: Appointment, type: 'Health Prescription' | 'Lab Test Result') => () =>
+    Promise.resolve(
+      AppointmentStore.setSelectedAppointment(appointment)
+    ).then(() =>
+      type === 'Health Prescription'
+        ? history.push('/prescription/add')
+        : history.push('/labTest/add')
+    )
 
   return (
     <AppContainer isLoading={ isReady === false }>
@@ -109,7 +129,7 @@ const PatientDetailPage: FC<PageProp> = () => {
                   healthPrescriptions
                     .sort((a, b) => a.date.getTime() - b.date.getTime())
                     .map((record, index) =>
-                      <TableRow key={ 'row-' + index } hover onClick={ () => viewPrescription(record) }>
+                      <TableRow key={ 'row-' + index } hover onClick={ view('Health Prescription', record) }>
                         <TableCell>{ record.illness }</TableCell>
                         <TableCell>{ record.date.toDateString() }</TableCell>
                       </TableRow>
@@ -128,7 +148,7 @@ const PatientDetailPage: FC<PageProp> = () => {
                   labTestResults
                     .sort((a, b) => a.date.getTime() - b.date.getTime())
                     .map((record, index) =>
-                      <TableRow key={ 'row-' + index } hover onClick={ () => viewLabTest(record) }>
+                      <TableRow key={ 'row-' + index } hover onClick={ view('Lab Test Result', record) }>
                         <TableCell>{ record.title }</TableCell>
                         <TableCell>{ record.date.toDateString() }</TableCell>
                       </TableRow>
@@ -145,21 +165,56 @@ const PatientDetailPage: FC<PageProp> = () => {
                 title='Consultation Turn'
                 defaultExpanded
               >
-                <Typography>{ appointmentByNumber.turn }</Typography>
+                <Grid container direction='column' spacing={ 1 }>
+                  <Grid item>
+                    <Typography>{ 'Date: ' + appointmentByNumber.date.toDateString() }</Typography>
+                  </Grid>
+                  <Grid item>
+                    <Typography>{ 'Address: ' + appointmentByNumber.address }</Typography>
+                  </Grid>
+                  <Grid item>
+                    <Typography>{ 'Turn: ' + (appointmentByNumber.turn + 1) }</Typography>
+                  </Grid>
+                  <Grid item container spacing={ 1 }>
+                    <Button onClick={ insertHealthRecord(appointmentByNumber, 'Health Prescription') } variant='contained' color='primary'>{ 'Insert Health Prescription' }</Button>
+                    <Button onClick={ insertHealthRecord(appointmentByNumber, 'Lab Test Result') } variant='contained' color='primary' style={ { marginLeft: 10 } }>{ 'Insert Lab Test Result' }</Button>
+                  </Grid>
+                </Grid>
               </AppExpansion>
               : undefined
           }
           <AppExpansion title='Upcoming Appointments'>
             <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>{ 'Date' }</TableCell>
+                  <TableCell>{ 'Time' }</TableCell>
+                  <TableCell>{ 'Action' }</TableCell>
+                </TableRow>
+              </TableHead>
               <TableBody>
                 {
-                  AC.appointmentDB.filter(a => a.name === patient?.username && a.medicalStaff === currentUser?.username && a.type === 'byTime')
+                  Accepted
                     .sort((a, b) => a.date.getTime() - b.date.getTime())
                     .map((appointment, index) =>
                       appointment.type === 'byTime'
                         ? <TableRow hover key={ 'row-' + index }>
-                          <TableCell>{ appointment.date.toDateString() }</TableCell>
-                          <TableCell>{ appointment.time }</TableCell>
+                          <TableCell>{ appointment.time.toDateString() }</TableCell>
+                          <TableCell>{ appointment.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) }</TableCell>
+                          <TableCell>
+                            <Grid container spacing={ 1 }>
+                              <Grid item xs={ 6 }>
+                                <Button size="small" onClick={ insertHealthRecord({ ...appointment }, 'Health Prescription') } variant='contained' color='primary'>
+                                  { 'Insert Health Prescription' }
+                                </Button>
+                              </Grid>
+                              <Grid item xs={ 6 }>
+                                <Button size="small" onClick={ insertHealthRecord({ ...appointment }, 'Lab Test Result') } variant='contained' color='primary' style={ { marginLeft: 10 } }>
+                                  { 'Insert Lab Test Result' }
+                                </Button>
+                              </Grid>
+                            </Grid>
+                          </TableCell>
                         </TableRow>
                         : undefined
                     )

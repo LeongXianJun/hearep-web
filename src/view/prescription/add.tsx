@@ -1,15 +1,20 @@
 import React, { FC, useState, useEffect } from 'react'
+import { AppContainer, AppExpansion } from '../common'
 import {
   Grid, IconButton, Card, CardHeader, CardContent,
   CardActions, Breadcrumbs, Typography, Link, Button,
-  TextField
+  TextField, Table, TableBody, TableRow, TableCell
 } from '@material-ui/core'
+import DateFnsUtils from '@date-io/date-fns'
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker
+} from '@material-ui/pickers'
 import { Add as AddIcon, Create as CreateIcon, Delete as DeleteIcon } from '@material-ui/icons'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 
-import { AppContainer } from '../common'
-import { UserStore, HealthRecordStore } from '../../stores'
+import { UserStore, HealthRecordStore, AppointmentStore, Appointment } from '../../stores'
 
 interface PageProp {
 
@@ -19,17 +24,19 @@ const AddPrescriptionPage: FC<PageProp> = () => {
   const history = useHistory()
   const isReady = UserStore.ready()
   const patient = HealthRecordStore.getSelectedPatient()
+  const appointment = AppointmentStore.getSelectedAppointment()
   const date = new Date()
 
   const [ illness, setIllness ] = useState('')
   const [ clinicalOpinion, setClinicalOpinion ] = useState('')
+  const [ refillDate, setRefillDate ] = useState(new Date())
   const [ medicines, setMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
 
   useEffect(() => {
     if (isReady && patient === undefined) {
       history.replace('/patient')
     }
-  }, [ isReady, patient, ])
+  }, [ isReady, patient, history ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -42,17 +49,19 @@ const AddPrescriptionPage: FC<PageProp> = () => {
     if (patient) {
       HealthRecordStore.insertHealthRecord({
         type: 'Health Prescription', patientId: patient.id,
-        date, appId: '123', illness, clinicalOpinion
+        date, appId: appointment?.id, illness, clinicalOpinion
       }).then(async hr => {
         if (hr) {
           if (hr instanceof Error) {
             console.error(hr)
           } else {
-            const validMedicines = medicines.filter(m => m.medicine !== '')
+            if (appointment)
+              AppointmentStore.upApp(appointment, appointment.status, 'Completed')
+            const validMedicines = medicines.filter(m => m.medicine !== '' && m.dosage !== undefined && m.usage !== '')
             if (validMedicines.length > 0) {
               await HealthRecordStore.insertHealthRecord({
                 type: 'Medication Record', patientId: patient.id, date,
-                prescriptionId: hr.hrid, medications: validMedicines
+                prescriptionId: hr.hrid, refillDate, medications: validMedicines
               })
             }
           }
@@ -78,7 +87,8 @@ const AddPrescriptionPage: FC<PageProp> = () => {
       </Breadcrumbs>
       <Grid container direction='row' justify='center' spacing={ 3 } style={ { marginTop: 5 } }>
         <Grid item xs={ 12 } md={ 4 }>
-          { prescriptionDetail() }
+          { PrescriptionDetail() }
+          { appointment ? AppointmentDetail(appointment) : undefined }
         </Grid>
         <Grid item xs={ 12 } md={ 8 }>
           { Medication() }
@@ -87,7 +97,7 @@ const AddPrescriptionPage: FC<PageProp> = () => {
     </AppContainer>
   )
 
-  function prescriptionDetail() {
+  function PrescriptionDetail() {
     return (
       <Card>
         <CardHeader title={ 'Prescription Information' } />
@@ -142,6 +152,40 @@ const AddPrescriptionPage: FC<PageProp> = () => {
             </Button>
         </CardActions>
       </Card>
+    )
+  }
+
+  function AppointmentDetail(app: Appointment) {
+    const details = [
+      { field: 'Address', val: app.address },
+      ...app.type === 'byTime'
+        ? [
+          { field: 'Date', val: app.time.toDateString() },
+          { field: 'Time', val: app.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) }
+        ]
+        : app.type === 'byNumber'
+          ? [
+            { field: 'Date', val: app.date.toDateString() },
+            { field: 'Turn', val: app.turn + 1 }
+          ]
+          : []
+    ].filter(({ val }) => val !== undefined && val !== '')
+
+    return (
+      <AppExpansion title={ 'Appointment Detail' }>
+        <Table>
+          <TableBody>
+            {
+              details.map(({ field, val }, index) =>
+                <TableRow hover key={ 'arow-' + index }>
+                  <TableCell>{ field }</TableCell>
+                  <TableCell>{ val }</TableCell>
+                </TableRow>
+              )
+            }
+          </TableBody>
+        </Table>
+      </AppExpansion>
     )
   }
 
@@ -222,6 +266,22 @@ const AddPrescriptionPage: FC<PageProp> = () => {
                 </Grid>
               )
             }
+            <Grid item xs={ 12 }>
+              <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                <KeyboardDatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  margin="normal"
+                  label='Refill Date'
+                  value={ refillDate }
+                  onChange={ date => date && setRefillDate(date) }
+                  KeyboardButtonProps={ {
+                    'aria-label': 'change date',
+                  } }
+                />
+              </MuiPickersUtilsProvider>
+            </Grid>
           </Grid>
         </CardContent>
       </Card>

@@ -24,7 +24,7 @@ const AuthLoadingScreen: FC<PageProp> = () => {
     }
 
     return UserStore.unsubscribe
-  }, [ isReady ])
+  }, [ isReady, history ])
 
   return (
     <React.Fragment>

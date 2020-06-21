@@ -1,22 +1,39 @@
-import React, { FC, useState } from 'react'
+import React, { FC, useState, useEffect } from 'react'
 import { AppContainer } from '../common'
 import {
   TextField, InputAdornment, Typography, TableHead, CardHeader,
   Card, CardContent, Grid, Table, TableBody,
   TableRow, TableCell, Breadcrumbs
 } from '@material-ui/core'
-import SearchIcon from '@material-ui/icons/Search'
-import AC, { Appointment } from '../../connections/AppointmentConnection'
-import RC from '../../connections/RecordConnection'
-import UC from '../../connections/UserConnection'
-import { useHistory, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+import { withResubAutoSubscriptions } from 'resub'
+import { Search as SearchIcon } from '@material-ui/icons'
+
+import { UserStore, AppointmentStore } from '../../stores'
 
 interface PageProp {
 
 }
 
 const AppointmentHistory: FC<PageProp> = () => {
-  const history = useHistory()
+  const isReady = UserStore.ready()
+  const patients = UserStore.getPatients()
+  const isAppStoreReady = AppointmentStore.ready()
+  const appointments = AppointmentStore.getGroupedAppointments()
+  const { Completed, Cancelled } = appointments
+
+  useEffect(() => {
+    if (isReady && patients.length === 0)
+      UserStore.fetchAllPatient()
+        .catch(err => console.log(err))
+  }, [ isReady, patients ])
+
+  useEffect(() => {
+    if (isReady && isAppStoreReady === false)
+      AppointmentStore.fetchAllAppointments()
+        .catch(err => console.log(err))
+  }, [ isReady, isAppStoreReady ])
+
   const [ filter, setFilter ] = useState('')
 
   const breadcrumbs = [
@@ -24,20 +41,6 @@ const AppointmentHistory: FC<PageProp> = () => {
     { path: '/appointment', text: 'Appointment' },
     { path: '/patient/history', text: 'History' }
   ]
-
-  const redirect = (app: Appointment) => {
-    const r = RC.recordDB.find(r => r.type !== 'medication record' && r.appID === app.id)
-    switch (r?.type ?? '') {
-      case 'health prescription':
-        history.push('/prescription/index')
-        break
-      case 'lab test result':
-        history.push('/labTest/index')
-        break
-      default:
-        break
-    }
-  }
 
   return (
     <AppContainer>
@@ -79,34 +82,48 @@ const AppointmentHistory: FC<PageProp> = () => {
           }
         />
         <CardContent>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{ 'Patient' }</TableCell>
-                <TableCell>{ 'Date' }</TableCell>
-                <TableCell>{ 'Time' }</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {
-                AC.appointmentDB.filter(a => a.name.includes(filter) && a.medicalStaff === UC.currentUser?.detail?.fullname && a.type === 'byTime')
-                  .sort((a, b) => a.date.getTime() - b.date.getTime())
-                  .map((appointment, index) =>
-                    appointment.type === 'byTime'
-                      ? <TableRow hover key={ 'row-' + index } onClick={ () => redirect(appointment) }>
-                        <TableCell>{ appointment.name }</TableCell>
-                        <TableCell>{ appointment.date.toDateString() }</TableCell>
-                        <TableCell>{ appointment.time }</TableCell>
-                      </TableRow>
-                      : undefined
-                  )
-              }
-            </TableBody>
-          </Table>
+          {
+            [ ...Completed, ...Cancelled ].length > 0
+              ? <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{ 'Patient' }</TableCell>
+                    <TableCell>{ 'Date' }</TableCell>
+                    <TableCell>{ 'Time / Turn' }</TableCell>
+                    <TableCell>{ 'Status' }</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {
+                    [ ...Completed, ...Cancelled ].map(a => ({ ...a, patient: patients.find(p => p.id === a.patientId) }))
+                      .filter(a => a.patient?.username.includes(filter))
+                      .sort((a, b) => a.date.getTime() - b.date.getTime())
+                      .map((appointment, index) =>
+                        appointment?.type === 'byTime'
+                          ? <TableRow hover key={ 'c-' + index }>
+                            <TableCell>{ appointment.patient?.username }</TableCell>
+                            <TableCell>{ appointment.time.toDateString() }</TableCell>
+                            <TableCell>{ appointment.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) }</TableCell>
+                            <TableCell>{ appointment.status }</TableCell>
+                          </TableRow>
+                          : appointment?.type === 'byNumber'
+                            ? <TableRow hover key={ 'c-' + index }>
+                              <TableCell>{ appointment.patient?.username }</TableCell>
+                              <TableCell>{ appointment.date.toDateString() }</TableCell>
+                              <TableCell>{ appointment.turn + 1 }</TableCell>
+                              <TableCell>{ appointment.status }</TableCell>
+                            </TableRow>
+                            : undefined
+                      )
+                  }
+                </TableBody>
+              </Table>
+              : <Typography>{ 'No Appointment Yet' }</Typography>
+          }
         </CardContent>
       </Card>
     </AppContainer>
   )
 }
 
-export default AppointmentHistory
+export default withResubAutoSubscriptions(AppointmentHistory)

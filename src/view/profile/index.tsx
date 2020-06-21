@@ -1,4 +1,5 @@
 import React, { FC, useState, useEffect } from 'react'
+import { AppContainer, AppExpansion } from '../common'
 import {
   Typography, Grid, Table, TableBody, TableRow,
   TableCell, Fab, useTheme, Avatar
@@ -6,11 +7,10 @@ import {
 import EditIcon from '@material-ui/icons/Edit'
 import { withResubAutoSubscriptions } from 'resub'
 
-import AC, { FixedTime } from '../../connections/AppointmentConnection'
 import UpdateDialog from './update'
-import { UserStore, MedicalStaff } from '../../stores'
-import { AppContainer, AppExpansion } from '../common'
+import { CommonUtil } from '../../utils'
 import { maleAvatar, femaleAvatar } from '../../resources/images'
+import { UserStore, MedicalStaff, WorkingTimeStore, ByTimeWT, ByNumberWT } from '../../stores'
 
 interface PageProp {
 
@@ -20,12 +20,20 @@ const ProfilePage: FC<PageProp> = () => {
   const theme = useTheme()
   const user = UserStore.getUser()
   const isReady = UserStore.ready()
+  const isWTReady = WorkingTimeStore.ready()
+  const TimeInterval = WorkingTimeStore.getTimeInterval()
 
   const [ open, setOpen ] = useState(false)
 
   useEffect(() => {
     return UserStore.unsubscribe
   }, [])
+
+  useEffect(() => {
+    if (isReady && isWTReady === false && TimeInterval.length === 0) {
+      WorkingTimeStore.fetchTimeInterval()
+    }
+  }, [ isReady, isWTReady, TimeInterval ])
 
   return (
     <AppContainer isLoading={ isReady === false }>
@@ -54,9 +62,12 @@ const ProfilePage: FC<PageProp> = () => {
                   <Grid item>
                     { WorkingInfo(user) }
                   </Grid>
-                  <Grid item>
-                    { TimeSlotInfo(user) }
-                  </Grid>
+                  { user.workingTime !== undefined
+                    ? <Grid item>
+                      { TimeSlotInfo(user.workingTime) }
+                    </Grid>
+                    : undefined
+                  }
                 </Grid>
               </>
               : <Typography>{ 'Information Not Found. Please contact the developer.' }</Typography>
@@ -155,16 +166,24 @@ const ProfilePage: FC<PageProp> = () => {
     )
   }
 
-  function TimeSlotInfo(user: MedicalStaff) {
-    const wt = AC.workingTimes.find(a => a.userId.toString() === user.id)
-    if (wt?.type !== 'byTime') {
-      return undefined
-    }
-
+  function TimeSlotInfo(wt: ByTimeWT | ByNumberWT) {
     const details = [
-      ...wt?.timeslots
-    ].map(({ day, slots }) => ({ field: day, val: slots.map(s => FixedTime[ s ]).join(', ') }))
-      .filter(({ val }) => val !== undefined && val !== '')
+      ...wt.type === 'byTime'
+        ? [
+          ...wt.timeslots.map(ts => ({
+            field: CommonUtil.getDayOfWeek(ts.day),
+            val: ts.slots.map(s => TimeInterval[ parseInt(s.toString()) ]?.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' })).join(', ')
+          }))
+        ]
+        : wt.type === 'byNumber'
+          ? [
+            ...wt.timeslots.map(ts => ({
+              field: CommonUtil.getDayOfWeek(ts.day),
+              val: ts.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) + ' - ' + ts.endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' })
+            }))
+          ]
+          : []
+    ]
 
     return (
       <AppExpansion

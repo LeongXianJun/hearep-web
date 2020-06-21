@@ -1,20 +1,19 @@
-import React, { useState, FC } from 'react'
+import React, { useState, FC, useEffect } from 'react'
 import { AppContainer, AppExpansion, AppTabPanel } from '../common'
 import {
-  TextField, InputAdornment, Typography, TableHead, CardHeader,
-  Card, CardContent, Grid, Dialog, DialogTitle,
-  DialogContent, DialogContentText, DialogActions, Button, useMediaQuery,
-  useTheme, Table, TableBody, TableRow, TableCell,
-  IconButton, Paper, Tabs, Tab, Checkbox
+  TextField, InputAdornment, Typography, TableHead, Grid,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  useMediaQuery, useTheme, Table, TableBody, TableRow,
+  TableCell, Paper, Tabs, Tab, Checkbox
 } from '@material-ui/core'
-import SearchIcon from '@material-ui/icons/Search'
-import ScheduleIcon from '@material-ui/icons/Schedule'
-
-import AC, { Appointment, FixedTime } from '../../connections/AppointmentConnection'
-import UC from '../../connections/UserConnection'
-
 import { NavLink } from 'react-router-dom'
+import DateFnsUtils from '@date-io/date-fns'
 import SwipeableViews from 'react-swipeable-views'
+import { withResubAutoSubscriptions } from 'resub'
+import { Search as SearchIcon } from '@material-ui/icons'
+import { MuiPickersUtilsProvider, KeyboardTimePicker } from '@material-ui/pickers'
+
+import { UserStore, AppointmentStore, WorkingTimeStore } from '../../stores'
 
 interface PageProp {
 
@@ -23,123 +22,137 @@ interface PageProp {
 const AppointmentPage: FC<PageProp> = () => {
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
+  const isReady = UserStore.ready()
+  const patients = UserStore.getPatients()
+  const isAppStoreReady = AppointmentStore.ready()
+  const appointments = AppointmentStore.getGroupedAppointments()
+  const isWTReady = WorkingTimeStore.ready()
+  const TimeInterval = WorkingTimeStore.getTimeInterval()
+
   const [ filter, setFilter ] = useState('')
   const [ timeslotOpen, setTimeslotOpen ] = useState(false)
-  const [ rescheduledApp, setRescheduledApp ] = useState<Appointment>()
+
+  useEffect(() => {
+    if (isReady && patients.length === 0)
+      UserStore.fetchAllPatient()
+        .catch(err => console.log(err))
+  }, [ isReady, patients ])
+
+  useEffect(() => {
+    if (isReady && isAppStoreReady === false)
+      AppointmentStore.fetchAllAppointments()
+        .catch(err => console.log(err))
+  }, [ isReady, isAppStoreReady ])
+
+  useEffect(() => {
+    if (isReady && isWTReady === false && TimeInterval.length === 0)
+      WorkingTimeStore.fetchTimeInterval()
+        .catch(err => console.log(err))
+  }, [ isReady, isWTReady, TimeInterval ])
+
+  const updateStatus = (id: string, status: 'Accepted' | 'Rejected') => () =>
+    AppointmentStore.updateStatus({ id, status })
 
   return (
-    <AppContainer>
+    <AppContainer isLoading={ isReady === false }>
       <Grid container spacing={ 2 }>
-        <Grid item xs={ 12 } md={ 9 }>
-          <Typography variant='h2'>{ 'Appointment' }</Typography>
+        <Grid item xs={ 12 } sm={ 8 }>
+          <Typography variant='h2'>{ 'Appointments' }</Typography>
         </Grid>
-        <Grid item container xs={ 12 } md alignContent='center' justify='center'>
+        <Grid item container xs={ 12 } sm={ 1 } alignContent='center' justify='center'>
+          <NavLink to='/appointment/history'>{ 'History' }</NavLink>
+        </Grid>
+        <Grid item container xs={ 12 } sm alignContent='center' justify='center'>
           <Button variant="contained" color='primary' onClick={ () => setTimeslotOpen(true) }>{ 'Set Appointment Timeslot' }</Button>
         </Grid>
       </Grid>
       <Grid container spacing={ 3 }>
         <Grid item xs={ 12 }>
-          <AppExpansion title='Upcoming Appointments'>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{ 'Patient' }</TableCell>
-                  <TableCell>{ 'Date' }</TableCell>
-                  <TableCell>{ 'Time' }</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {
-                  AC.nearing.filter(a => a.medicalStaff === UC.currentUser?.detail?.fullname && a.type === 'byTime')
-                    .sort((a, b) => a.date.getTime() - b.date.getTime())
-                    .map((appointment, index) =>
-                      appointment.type === 'byTime'
-                        ? <TableRow hover key={ 'nearingR-' + index }>
-                          <TableCell>{ appointment.name }</TableCell>
-                          <TableCell>{ appointment.date.toDateString() }</TableCell>
-                          <TableCell>{ appointment.time }</TableCell>
-                        </TableRow>
-                        : undefined
-                    )
-                }
-              </TableBody>
-            </Table>
-          </AppExpansion>
+          <TextField
+            style={ { marginTop: 10 } }
+            label='Search'
+            placeholder="Please enter the patient's name"
+            InputProps={ {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            } }
+            onChange={ event => setFilter(event.target.value) }
+            variant='outlined'
+            fullWidth
+          />
         </Grid>
-        <Grid item xs={ 12 }>
-          <Card>
-            <CardHeader
-              disableTypography
-              title={
-                <Grid container spacing={ 2 }>
-                  <Grid item xs={ 11 }>
-                    <Typography variant='h4'>{ 'All Appointments' }</Typography>
-                  </Grid>
-                  <Grid item container xs alignContent='center' justify='center'>
-                    <NavLink to='/appointment/history'>{ 'History' }</NavLink>
-                  </Grid>
-                </Grid>
-              }
-              subheader={
-                <TextField
-                  style={ { marginTop: 10 } }
-                  label='Search'
-                  placeholder="Please enter the patient's name"
-                  InputProps={ {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  } }
-                  onChange={ event => setFilter(event.target.value) }
-                  variant='outlined'
-                  fullWidth
-                />
-              }
-            />
-            <CardContent>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{ 'Patient' }</TableCell>
-                    <TableCell>{ 'Date' }</TableCell>
-                    <TableCell>{ 'Time' }</TableCell>
-                    <TableCell>{ 'Reschedule' }</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {
-                    AC.appointmentDB.filter(a => a.name.includes(filter) && a.medicalStaff === UC.currentUser?.detail?.fullname && a.type === 'byTime')
-                      .sort((a, b) => a.date.getTime() - b.date.getTime())
-                      .map((appointment, index) =>
-                        appointment.type === 'byTime'
-                          ? <TableRow hover key={ 'row-' + index }>
-                            <TableCell>{ appointment.name }</TableCell>
-                            <TableCell>{ appointment.date.toDateString() }</TableCell>
-                            <TableCell>{ appointment.time }</TableCell>
-                            <TableCell>
-                              <IconButton onClick={ () => setRescheduledApp(appointment) }>
-                                <ScheduleIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                          : undefined
-                      )
-                  }
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </Grid>
+        {
+          [
+            { category: 'Pending', apps: appointments[ 'Pending' ] },
+            { category: 'Waiting', apps: appointments[ 'Waiting' ] },
+            { category: 'Accepted', apps: appointments[ 'Accepted' ] },
+            { category: 'Rejected', apps: appointments[ 'Rejected' ] }
+          ].filter(record => record.apps.length > 0)
+            .map(({ category, apps }) =>
+              <Grid key={ category + '-list' } item xs={ 12 }>
+                <AppExpansion title={ category + ' Appointments' }>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>{ 'Patient' }</TableCell>
+                        <TableCell>{ 'Date' }</TableCell>
+                        <TableCell>{ category === 'Waiting' ? 'Turn' : 'Time' }</TableCell>
+                        {
+                          [ 'Pending' ].includes(category)
+                            ? <TableCell>{ 'Action' }</TableCell>
+                            : undefined
+                        }
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {
+                        apps.map(a => ({ ...a, patient: patients.find(p => p.id === a.patientId) }))
+                          .filter(a => a.patient?.username.includes(filter))
+                          .sort((a, b) => a.date.getTime() - b.date.getTime())
+                          .map((appointment, index) =>
+                            appointment?.type === 'byTime'
+                              ? <TableRow hover key={ 'c-' + index }>
+                                <TableCell>{ appointment.patient?.username }</TableCell>
+                                <TableCell>{ appointment.time.toDateString() }</TableCell>
+                                <TableCell>{ appointment.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) }</TableCell>
+                                {
+                                  category === 'Pending'
+                                    ? <TableCell>
+                                      <Button size="small" onClick={ updateStatus(appointment.id, 'Accepted') } variant='contained' color='primary'>{ 'Accept' }</Button>
+                                      <Button size="small" onClick={ updateStatus(appointment.id, 'Rejected') } color='secondary' style={ { marginLeft: 10 } }>{ 'Reject' }</Button>
+                                    </TableCell>
+                                    : undefined
+                                }
+                              </TableRow>
+                              : appointment?.type === 'byNumber'
+                                ? <TableRow hover key={ 'c-' + index }>
+                                  <TableCell>{ appointment.patient?.username }</TableCell>
+                                  <TableCell>{ appointment.date.toDateString() }</TableCell>
+                                  <TableCell>{ appointment.turn + 1 }</TableCell>
+                                </TableRow>
+                                : undefined
+                          )
+                      }
+                    </TableBody>
+                  </Table>
+                </AppExpansion>
+              </Grid>
+            )
+        }
       </Grid>
       { SetTimeslotDialog() }
-      { RescheduleDialog() }
     </AppContainer>
   )
 
   function SetTimeslotDialog() {
+    const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
     const [ value, setValue ] = React.useState(0)
+    const [ byTimeData, setByTimeData ] = useState(rows.map(() => [ ...Array(TimeInterval.length) ].map(() => false)))
+    const [ isWorking, setIsWorking ] = useState([ ...Array(7) ].map(() => false))
+    const [ byNumberData, setByNumberData ] = useState(rows.map(() => [ ...Array(2) ].map(() => new Date())))
 
     const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
       setValue(newValue);
@@ -149,9 +162,22 @@ const AppointmentPage: FC<PageProp> = () => {
       setValue(index);
     }
 
-    const submit = () => {
-      setTimeslotOpen(false)
-    }
+    const submit = () =>
+      UserStore.updateWorkingTime({
+        ...value === 0
+          ? {
+            type: 'byTime',
+            timeslots: [
+              ...byTimeData.map((d, i) => ({ day: i as 0 | 1 | 2 | 3 | 4 | 5 | 6, slots: d.reduce<number[]>((r, s, index) => s ? [ ...r, index ] : r, []) })).filter(d => d.slots.length > 0)
+            ]
+          }
+          : {
+            type: 'byNumber',
+            timeslots: [
+              ...byNumberData.map((d, i) => ({ day: i as 0 | 1 | 2 | 3 | 4 | 5 | 6, startTime: d[ 0 ], endTime: d[ 1 ] })).filter((d, i) => isWorking[ i ])
+            ]
+          }
+      }).then(() => setTimeslotOpen(false))
 
     function tabProps(index: any) {
       return {
@@ -208,12 +234,12 @@ const AppointmentPage: FC<PageProp> = () => {
     )
 
     function ByTime() {
-      const headers = [ 'Day', ...FixedTime ]
-      const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
-      const data: boolean[][] = rows.map(() => [ ...Array(FixedTime.length) ].map(() => false))
+      const headers = [ 'Day', ...TimeInterval.map(ti => ti.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' })) ]
 
       const handleChange = (r: number, c: number) => (checked: boolean) => {
-        data[ r ][ c ] = checked
+        setByTimeData([
+          ...byTimeData.map((row, rindex) => rindex === r ? row.map((col, cindex) => cindex === c ? checked : col) : row)
+        ])
       }
 
       return (
@@ -227,14 +253,15 @@ const AppointmentPage: FC<PageProp> = () => {
             { rows.map((r, rindex) =>
               <TableRow hover key={ 'tr-' + rindex }>
                 <TableCell>{ r }</TableCell>
-                { FixedTime.map((ft, i) =>
-                  <TableCell key={ ft + '-' + i }>
-                    <Checkbox
-                      onChange={ event => handleChange(rindex, i)(event.target.checked) }
-                      inputProps={ { 'aria-label': 'primary checkbox' } }
-                    />
-                  </TableCell>
-                )
+                {
+                  TimeInterval.map((ft, i) =>
+                    <TableCell key={ 'bt-' + i }>
+                      <Checkbox
+                        onChange={ event => handleChange(rindex, i)(event.target.checked) }
+                        inputProps={ { 'aria-label': 'primary checkbox' } }
+                      />
+                    </TableCell>
+                  )
                 }
               </TableRow>
             ) }
@@ -244,17 +271,16 @@ const AppointmentPage: FC<PageProp> = () => {
     }
 
     function ByNumber() {
-      const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
-      const data: string[][] = rows.map(() => [ ...Array(2) ].map(() => ''))
-      const isWorking: boolean[] = [ ...Array(7) ].map(() => true)
-
       const setWorking = (r: number) => (value: boolean) => {
-        isWorking[ r ] = value
-        console.log(r, isWorking[ r ])
+        setIsWorking([
+          ...isWorking.map((row, rindex) => rindex === r ? value : row)
+        ])
       }
 
-      const handleChange = (r: number, c: number) => (value: string) => {
-        data[ r ][ c ] = value
+      const handleChange = (r: number, c: number) => (value: Date) => {
+        setByNumberData([
+          ...byNumberData.map((row, rindex) => rindex === r ? row.map((col, cindex) => cindex === c ? value : col) : row)
+        ])
       }
 
       return (
@@ -264,28 +290,39 @@ const AppointmentPage: FC<PageProp> = () => {
               <TableRow hover key={ 'tr-' + rindex }>
                 <TableCell>
                   <Checkbox
+                    value={ isWorking[ rindex ] }
                     onChange={ event => setWorking(rindex)(event.target.checked) }
                     inputProps={ { 'aria-label': 'primary checkbox' } }
                   />
                 </TableCell>
                 <TableCell>{ r }</TableCell>
                 <TableCell>
-                  <TextField
-                    variant='outlined'
-                    label="Start Time"
-                    fullWidth
-                    style={ { minWidth: '100px' } }
-                    onChange={ event => handleChange(rindex, 0)(event.target.value) }
-                  />
+                  <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                    <KeyboardTimePicker
+                      disableToolbar
+                      margin="normal"
+                      label='Start Time'
+                      value={ byNumberData[ rindex ][ 0 ] }
+                      onChange={ date => date && handleChange(rindex, 0)(date) }
+                      KeyboardButtonProps={ {
+                        'aria-label': 'change time',
+                      } }
+                    />
+                  </MuiPickersUtilsProvider>
                 </TableCell>
                 <TableCell>
-                  <TextField
-                    variant='outlined'
-                    label="End Time"
-                    fullWidth
-                    style={ { minWidth: '100px' } }
-                    onChange={ event => handleChange(rindex, 1)(event.target.value) }
-                  />
+                  <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                    <KeyboardTimePicker
+                      disableToolbar
+                      margin="normal"
+                      label='End Time Date'
+                      value={ byNumberData[ rindex ][ 1 ] }
+                      onChange={ date => date && handleChange(rindex, 1)(date) }
+                      KeyboardButtonProps={ {
+                        'aria-label': 'change time',
+                      } }
+                    />
+                  </MuiPickersUtilsProvider>
                 </TableCell>
               </TableRow>
             ) }
@@ -294,65 +331,6 @@ const AppointmentPage: FC<PageProp> = () => {
       )
     }
   }
-
-
-  function RescheduleDialog() {
-    const headers = [ 'Day', ...FixedTime ]
-    const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
-    const [ checked, setChecked ] = useState('')
-
-    const handleChange = (r: number, c: number) => (checked: boolean) => {
-      setChecked(r + '-' + c)
-      console.log(r + '-' + c, checked)
-    }
-
-    const reschedule = () => {
-      setRescheduledApp(undefined)
-    }
-
-    return (
-      <Dialog open={ rescheduledApp !== undefined } onClose={ () => setRescheduledApp(undefined) } maxWidth='md' fullScreen={ fullScreen }>
-        <DialogTitle>{ 'Reschedule Appointment' }</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            { "Please pick another time to reschedule." }
-          </DialogContentText>
-          <Table>
-            <TableHead>
-              <TableRow>
-                { headers.map((h, index) => <TableCell key={ 'th-' + index }>{ h }</TableCell>) }
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              { rows.map((r, rindex) =>
-                <TableRow hover key={ 'tr-' + rindex }>
-                  <TableCell>{ r }</TableCell>
-                  { FixedTime.map((ft, i) =>
-                    <TableCell key={ ft + '-' + i }>
-                      <Checkbox
-                        checked={ rindex + '-' + i === checked }
-                        onChange={ event => handleChange(rindex, i)(event.target.checked) }
-                        inputProps={ { 'aria-label': 'primary checkbox' } }
-                      />
-                    </TableCell>
-                  )
-                  }
-                </TableRow>
-              ) }
-            </TableBody>
-          </Table>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={ () => setRescheduledApp(undefined) }>
-            Cancel
-          </Button>
-          <Button onClick={ reschedule } color='primary'>
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-    )
-  }
 }
 
-export default AppointmentPage
+export default withResubAutoSubscriptions(AppointmentPage)

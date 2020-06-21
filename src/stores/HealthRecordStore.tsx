@@ -7,7 +7,7 @@ class HealthRecordStore extends StoreBase {
   private selectedPatient: Patient | undefined
   private healthPrescriptions: HealthPrescription[]
   private labTestResults: LabTestResult[]
-  private selectedRecord: HR | undefined
+  private selectedRecord: HealthRecord | undefined
 
   constructor() {
     super()
@@ -35,19 +35,22 @@ class HealthRecordStore extends StoreBase {
           }
         }).then(data => {
           if (data.errors) {
+            this.healthPrescriptions = []
+            this.labTestResults = []
+            this.trigger(HealthRecordStore.HRKey)
             throw new Error(data.errors)
           } else {
             this.healthPrescriptions = data[ 'Health Prescription' ].map((hr: any) => new HealthPrescription(hr))
             this.labTestResults = data[ 'Lab Test Result' ].map((hr: any) => new LabTestResult(hr))
             this.trigger(HealthRecordStore.HRKey)
           }
-        }).catch(err => Promise.reject(new Error('Fetch Health Records: ' + err)))
+        }).catch(err => Promise.reject(new Error('Fetch Health Records: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
     })
 
-  insertHealthRecord = (input: { patientId: string, date: Date } & ({ type: 'Health Prescription', appId: string, illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, medications: Medication[] } | { type: 'Lab Test Result', appId: string, title: string, comment: string, data: LabTestField[] })) =>
+  insertHealthRecord = (input: { patientId: string, date: Date } & ({ type: 'Health Prescription', appId?: string, illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', appId?: string, title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         return await fetch('http://localhost:8001/healthrecords/insert', {
@@ -72,6 +75,10 @@ class HealthRecordStore extends StoreBase {
           if (result.errors) {
             throw new Error(result.errors)
           } else if (result[ 'response' ].includes('success')) {
+            if (this.selectedRecord?.type === 'Health Prescription' && input.type === 'Medication Record') {
+              this.selectedRecord = { ...this.selectedRecord, medicationRecords: [ ...this.selectedRecord.medicationRecords, new MedicationRecord({ id: result.docId, ...input }) ] }
+              this.trigger(HealthRecordStore.SelectedRecordKey)
+            }
             return { hrid: result.docId }
           }
         })
@@ -81,7 +88,7 @@ class HealthRecordStore extends StoreBase {
       }
     })
 
-  updateHealthRecord = ({ type, ...input }: { id: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
+  updateHealthRecord = ({ type, ...input }: { id: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch('http://localhost:8001/healthrecords/update', {
@@ -107,7 +114,7 @@ class HealthRecordStore extends StoreBase {
             throw new Error(result.errors)
           }
         })
-          .catch(err => new Error(err))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -137,7 +144,7 @@ class HealthRecordStore extends StoreBase {
             throw new Error(result.errors)
           }
         })
-          .catch(err => new Error(err))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -173,36 +180,28 @@ class HealthRecordStore extends StoreBase {
     return this.selectedRecord as LabTestResult
   }
 
-  setSelectedRecord(record: HR) {
+  setSelectedRecord(record: HealthRecord) {
     this.selectedRecord = record
   }
 }
 
-class HealthRecord {
+class HealthPrescription {
   id: string
   medicalStaffId: string
   patientId: string
   date: Date
-
-  constructor(input: any) {
-    const { id, medicalStaffId, patientId, date } = input
-    this.id = id
-    this.medicalStaffId = medicalStaffId
-    this.patientId = patientId
-    this.date = new Date(date)
-  }
-}
-
-class HealthPrescription extends HealthRecord {
   type: 'Health Prescription' = 'Health Prescription'
-  appId: string
+  appId?: string
   illness: string
   clinicalOpinion: string
   medicationRecords: MedicationRecord[]
 
   constructor(input: any) {
-    super({ ...input })
-    const { appId, illness, clinicalOpinion, medicationRecords } = input
+    const { id, medicalStaffId, patientId, date, appId, illness, clinicalOpinion, medicationRecords } = input
+    this.id = id
+    this.medicalStaffId = medicalStaffId
+    this.patientId = patientId
+    this.date = new Date(date)
     this.appId = appId
     this.illness = illness
     this.clinicalOpinion = clinicalOpinion
@@ -210,29 +209,45 @@ class HealthPrescription extends HealthRecord {
   }
 }
 
-class MedicationRecord extends HealthRecord {
+class MedicationRecord {
+  id: string
+  medicalStaffId: string
+  patientId: string
+  date: Date
   type: 'Medication Record' = 'Medication Record'
   prescriptionId: string
+  refillDate: Date
   medications: Medication[]
 
   constructor(input: any) {
-    super({ ...input })
-    const { prescriptionId, medications } = input
+    const { id, medicalStaffId, patientId, date, prescriptionId, refillDate, medications } = input
+    this.id = id
+    this.medicalStaffId = medicalStaffId
+    this.patientId = patientId
+    this.date = new Date(date)
     this.prescriptionId = prescriptionId
+    this.refillDate = new Date(refillDate)
     this.medications = (medications as Array<any>).map(m => new Medication(m))
   }
 }
 
-class LabTestResult extends HealthRecord {
+class LabTestResult {
+  id: string
+  medicalStaffId: string
+  patientId: string
+  date: Date
   type: 'Lab Test Result' = 'Lab Test Result'
-  appId: string
+  appId?: string
   title: string
   comment: string
   data: LabTestField[]
 
   constructor(input: any) {
-    super({ ...input })
-    const { appId, title, comment, data } = input
+    const { id, medicalStaffId, patientId, date, appId, title, comment, data } = input
+    this.id = id
+    this.medicalStaffId = medicalStaffId
+    this.patientId = patientId
+    this.date = new Date(date)
     this.appId = appId
     this.title = title
     this.comment = comment
@@ -266,10 +281,10 @@ class LabTestField {
   }
 }
 
-type HR = HealthPrescription | MedicationRecord | LabTestResult
 export {
   HealthPrescription,
   MedicationRecord,
   LabTestResult
 }
+export type HealthRecord = HealthPrescription | MedicationRecord | LabTestResult
 export default new HealthRecordStore()

@@ -9,8 +9,7 @@ import { withResubAutoSubscriptions } from 'resub'
 import { Add as AddIcon, Create as CreateIcon, Delete as DeleteIcon } from '@material-ui/icons'
 
 import { AppContainer, AppExpansion } from '../common'
-import { UserStore, HealthRecordStore } from '../../stores'
-import AC, { Appointment } from '../../connections/AppointmentConnection'
+import { UserStore, HealthRecordStore, AppointmentStore, Appointment } from '../../stores'
 
 interface PageProp {
 
@@ -18,9 +17,9 @@ interface PageProp {
 
 const AddLabTestPage: FC<PageProp> = () => {
   const history = useHistory()
-  const app = AC.selectedApp
   const isReady = UserStore.ready()
   const patient = HealthRecordStore.getSelectedPatient()
+  const appointment = AppointmentStore.getSelectedAppointment()
   const date = new Date()
 
   const [ title, setTitle ] = useState('')
@@ -31,7 +30,7 @@ const AddLabTestPage: FC<PageProp> = () => {
     if (isReady && patient === undefined) {
       history.replace('/patient')
     }
-  }, [ isReady, patient ])
+  }, [ isReady, patient, history ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -43,7 +42,7 @@ const AddLabTestPage: FC<PageProp> = () => {
   const submit = () => {
     if (patient) {
       HealthRecordStore.insertHealthRecord({
-        type: 'Lab Test Result', appId: app.id.toString(), patientId: patient.id,
+        type: 'Lab Test Result', appId: appointment?.id.toString(), patientId: patient.id,
         date, title, comment, data: data.filter(d => d.field !== '')
       }).then(() => {
         history.goBack()
@@ -67,7 +66,7 @@ const AddLabTestPage: FC<PageProp> = () => {
       <Grid container direction='row' justify='center' spacing={ 3 } style={ { marginTop: 5 } }>
         <Grid item xs={ 12 } md={ 4 }>
           { LabTestDetail() }
-          { AppointmentDetail(app) }
+          { appointment ? AppointmentDetail(appointment) : undefined }
         </Grid>
         <Grid item xs={ 12 } md={ 8 }>
           { LabTestResult() }
@@ -136,8 +135,18 @@ const AddLabTestPage: FC<PageProp> = () => {
 
   function AppointmentDetail(app: Appointment) {
     const details = [
-      { field: 'Date', val: app?.date.toDateString() },
-      { field: 'Time', val: app?.type === 'byTime' ? app.time : undefined }
+      { field: 'Address', val: app.address },
+      ...app.type === 'byTime'
+        ? [
+          { field: 'Date', val: app.time.toDateString() },
+          { field: 'Time', val: app.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) }
+        ]
+        : app.type === 'byNumber'
+          ? [
+            { field: 'Date', val: app.date.toDateString() },
+            { field: 'Turn', val: app.turn + 1 }
+          ]
+          : []
     ].filter(({ val }) => val !== undefined && val !== '')
 
     return (

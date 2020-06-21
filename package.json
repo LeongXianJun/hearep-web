@@ -42,6 +42,7 @@
     ]
   },
   "devDependencies": {
+    "@material-ui/pickers": "^3.2.10",
     "@types/jest": "^24.9.1",
     "@types/loadable__component": "^5.10.0",
     "@types/material-ui": "^0.21.7",

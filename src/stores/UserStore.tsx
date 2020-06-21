@@ -24,14 +24,14 @@ class UserStore extends StoreBase {
       if (this.isRegistering === false) {
         this.fetchUser().then(() => {
           this.isReady = true
-          this.trigger(UserStore.IsReadyKey)
+          this.trigger(UserStore.UReadyKey)
         })
       }
     } else {
       this.firebaseUser = undefined
       // console.log('2', this.firebaseUser)
       this.isReady = true
-      this.trigger(UserStore.IsReadyKey)
+      this.trigger(UserStore.UReadyKey)
     }
   })
 
@@ -59,7 +59,7 @@ class UserStore extends StoreBase {
         }).then(data => {
           this.user = new MedicalStaff(data)
           this.trigger(UserStore.UserKey)
-        }).catch(err => Promise.reject(new Error('Fetch User: ' + err)))
+        }).catch(err => Promise.reject(new Error('Fetch User: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -88,7 +88,7 @@ class UserStore extends StoreBase {
             this.patients = data.map((p: any) => new Patient(p))
             this.trigger(UserStore.PatientKey)
           }
-        }).catch(err => Promise.reject(new Error('Fetch Patient: ' + err)))
+        }).catch(err => Promise.reject(new Error('Fetch Patient: ' + err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -122,7 +122,7 @@ class UserStore extends StoreBase {
             throw new Error(result.errors)
           }
         })
-          .catch(err => new Error(err))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -160,7 +160,7 @@ class UserStore extends StoreBase {
             }
           }
         })
-          .catch(err => Promise.reject(new Error(err)))
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -189,7 +189,39 @@ class UserStore extends StoreBase {
             throw new Error(result.errors)
           }
         })
-          .catch(err => new Error(err))
+          .catch(err => Promise.reject(new Error(err.message)))
+      } else {
+        throw new Error('No Token Found')
+      }
+    })
+
+  updateWorkingTime = (workingTime: WorkingTime) =>
+    this.getToken().then(async userToken => {
+      if (userToken) {
+        await fetch('http://localhost:8001/workingtime/update', {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: qs.stringify({ userToken, workingTime })
+        }).then(response => {
+          if (response.ok) {
+            return response.json()
+          } else {
+            throw new Error(response.status + ': (' + response.statusText + ')')
+          }
+        }).then(result => {
+          if (result.errors) {
+            throw new Error(result.errors)
+          } else if ((result.response as string).includes('success')) {
+            if (this.user) {
+              this.user = new MedicalStaff({ ...this.user, workingTime })
+              this.trigger(UserStore.UserKey)
+            }
+          }
+        })
+          .catch(err => Promise.reject(new Error(err.message)))
       } else {
         throw new Error('No Token Found')
       }
@@ -208,8 +240,8 @@ class UserStore extends StoreBase {
     return this.patients
   }
 
-  static IsReadyKey = 'IsReadyKey'
-  @autoSubscribeWithKey('IsReadyKey')
+  static UReadyKey = 'UReadyKey'
+  @autoSubscribeWithKey('UReadyKey')
   ready() {
     return this.isReady
   }
@@ -240,11 +272,19 @@ class UR {
 class MedicalStaff extends UR {
   type: 'Medical Staff' = 'Medical Staff'
   medicalInstituition: MedicalInstituition
+  workingTime?: WorkingTime
 
   constructor(input: any) {
     super({ ...input })
-    const { medicalInstituition } = input
+    const { medicalInstituition, workingTime } = input
     this.medicalInstituition = new MedicalInstituition({ ...medicalInstituition })
+    this.workingTime = workingTime
+      ? workingTime.type === 'byTime'
+        ? new ByTimeWT(workingTime)
+        : workingTime.type === 'byNumber'
+          ? new ByNumberWT(workingTime)
+          : undefined
+      : undefined
   }
 }
 
@@ -259,7 +299,6 @@ class Patient extends UR {
     this.phoneNumber = phoneNumber
     this.occupation = occupation
   }
-
 }
 
 class MedicalInstituition {
@@ -268,7 +307,7 @@ class MedicalInstituition {
   address: string
   department: string
 
-  constructor(input: { role: string, name: string, address: string, department: string }) {
+  constructor(input: any) {
     const { role, name, address, department } = input
     this.role = role
     this.name = name
@@ -277,8 +316,46 @@ class MedicalInstituition {
   }
 }
 
+type WorkingTime = ByTimeWT | ByNumberWT
+
+class ByTimeWT {
+  type: 'byTime' = 'byTime'
+  timeslots: {
+    day: 0 | 1 | 2 | 3 | 4 | 5 | 6
+    slots: number[]
+  }[]
+
+  constructor(input: any) {
+    const { timeslots } = input
+    this.timeslots = (timeslots as Array<any>).map(ts => ({
+      day: ts.day,
+      slots: ts.slots
+    }))
+  }
+}
+
+class ByNumberWT {
+  type: 'byNumber' = 'byNumber'
+  timeslots: {
+    day: 0 | 1 | 2 | 3 | 4 | 5 | 6
+    startTime: Date
+    endTime: Date
+  }[]
+
+  constructor(input: any) {
+    const { timeslots } = input
+    this.timeslots = (timeslots as Array<any>).map(ts => ({
+      day: ts.day,
+      startTime: new Date(ts.startTime),
+      endTime: new Date(ts.endTime),
+    }))
+  }
+}
+
 export {
   MedicalStaff,
-  Patient
+  Patient,
+  ByTimeWT,
+  ByNumberWT
 }
 export default new UserStore()

@@ -1,29 +1,37 @@
 import React, { FC, useState, useEffect } from 'react'
+import { AppContainer, AppExpansion } from '../common'
 import {
   Grid, useMediaQuery, Divider, IconButton,
   useTheme, Table, TableBody, TableRow, TableCell,
-  Card, CardHeader, CardContent, TableHead, Breadcrumbs,
-  Typography, Link, Button, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField
+  TableHead, Breadcrumbs, Typography, Link, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField
 } from '@material-ui/core'
+import DateFnsUtils from '@date-io/date-fns'
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker
+} from '@material-ui/pickers'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 import { Add as AddIcon, Delete as DeleteIcon } from '@material-ui/icons'
 
-import { AppContainer, AppExpansion } from '../common'
-import AC from '../../connections/AppointmentConnection'
-import { UserStore, HealthRecordStore, HealthPrescription, MedicationRecord } from '../../stores'
+import {
+  UserStore, HealthRecordStore, HealthPrescription, MedicationRecord, AppointmentStore
+} from '../../stores'
 
 interface PageProp {
 
 }
-const PatientPage: FC<PageProp> = () => {
+const PrescriptionPage: FC<PageProp> = () => {
   const theme = useTheme()
   const history = useHistory()
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const isReady = UserStore.ready()
   const patient = HealthRecordStore.getSelectedPatient()
   const record = HealthRecordStore.getSelectedHPRecord()
+  const appointments = AppointmentStore.getGroupedAppointments()
+  const patientAppointment = AppointmentStore.getPatientAppointment()
+  const { Completed } = appointments
 
   const [ open, setOpen ] = useState(false)
 
@@ -36,7 +44,16 @@ const PatientPage: FC<PageProp> = () => {
         history.replace('/patient/detail')
       }
     }
-  }, [ isReady, patient, record ])
+  }, [ isReady, patient, record, history ])
+
+  useEffect(() => {
+    if (isReady && record?.appId !== undefined && record.appId !== patientAppointment?.id) {
+      const target = Completed.find(app => app.id === record.appId)
+      if (target === undefined) {
+        AppointmentStore.fetchPatientAppointment(record.appId)
+      }
+    }
+  }, [ isReady, record, Completed, patientAppointment ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -66,11 +83,11 @@ const PatientPage: FC<PageProp> = () => {
                 title='Prescription Information'
                 defaultExpanded
               >
-                { pescriptionInfo(record) }
+                { PrescriptionInfo(record) }
               </AppExpansion>
               {
                 record.appId !== undefined
-                  ? appointmentDetail(record.appId)
+                  ? AppointmentDetail(record.appId)
                   : undefined
               }
             </Grid>
@@ -96,7 +113,7 @@ const PatientPage: FC<PageProp> = () => {
     </AppContainer>
   )
 
-  function pescriptionInfo(record: HealthPrescription) {
+  function PrescriptionInfo(record: HealthPrescription) {
     const details = [
       { field: 'Patient Name', val: patient?.username },
       { field: 'Consultation Date', val: record.date.toDateString() },
@@ -120,31 +137,32 @@ const PatientPage: FC<PageProp> = () => {
     )
   }
 
-  function appointmentDetail(appId: string) {
-    const appointment = AC.appointmentDB.find(a => a.id.toString() === appId)
+  function AppointmentDetail(appId: string) {
+    const appointment = Completed.find(app => app.id === appId) ?? patientAppointment
     const details = [
-      { field: 'Date', val: appointment?.date.toDateString() },
-      { field: 'Time', val: appointment?.type === 'byTime' ? appointment.time : undefined }
+      { field: 'Address', val: appointment?.address },
+      { field: 'Date', val: appointment?.type === 'byTime' ? appointment.time.toDateString() : appointment?.date.toDateString() },
+      { field: 'Time', val: appointment?.type === 'byTime' ? appointment.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) : undefined }
     ].filter(({ val }) => val !== undefined && val !== '')
 
     return (
-      <Card>
-        <CardHeader title={ 'Appointment Detail' } />
-        <CardContent>
-          <Table>
-            <TableBody>
-              {
-                details.map(({ field, val }, index) =>
-                  <TableRow hover key={ 'arow-' + index }>
-                    <TableCell>{ field }</TableCell>
-                    <TableCell>{ val }</TableCell>
-                  </TableRow>
-                )
-              }
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <AppExpansion
+        title={ 'Appointment Detail' }
+        defaultExpanded
+      >
+        <Table>
+          <TableBody>
+            {
+              details.map(({ field, val }, index) =>
+                <TableRow hover key={ 'arow-' + index }>
+                  <TableCell>{ field }</TableCell>
+                  <TableCell>{ val }</TableCell>
+                </TableRow>
+              )
+            }
+          </TableBody>
+        </Table>
+      </AppExpansion>
     )
   }
 
@@ -153,6 +171,7 @@ const PatientPage: FC<PageProp> = () => {
       <Grid key={ 'md-' + index } item xs={ 12 }>
         <AppExpansion
           title={ 'Medication Record on ' + mr.date.toDateString() }
+          subtitle={ 'Refill on ' + mr.refillDate.toDateString() }
         >
           <Table>
             <TableHead>
@@ -180,6 +199,7 @@ const PatientPage: FC<PageProp> = () => {
   }
 
   function AddMedicationRecordDialog() {
+    const [ refillDate, setRefillDate ] = useState(new Date())
     const [ medicines, setMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
     const addMedicine = () => {
       setMedicines([ ...medicines, { medicine: '', dosage: 0, usage: '' } ])
@@ -210,7 +230,7 @@ const PatientPage: FC<PageProp> = () => {
       if (patient && record) {
         HealthRecordStore.insertHealthRecord({
           type: 'Medication Record', prescriptionId: record.id,
-          date: new Date(), patientId: patient?.id,
+          date: new Date(), patientId: patient?.id, refillDate,
           medications: medicines
         }).then(() => {
           setOpen(false)
@@ -220,7 +240,31 @@ const PatientPage: FC<PageProp> = () => {
 
     return (
       <Dialog open={ open } onClose={ cancel } fullScreen={ fullScreen } maxWidth='md'>
-        <DialogTitle>{ 'New Medication Record' }</DialogTitle>
+        <DialogTitle>
+          <Grid container direction='row'>
+            <Grid item xs={ 8 }>
+              <Typography variant='h4'>{ 'New Medication Record' }</Typography>
+            </Grid>
+            <Grid item xs={ 4 }>
+              <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                <KeyboardDatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  size='small'
+                  margin="normal"
+                  label='Refill Date'
+                  value={ refillDate }
+                  onChange={ date => date && setRefillDate(date) }
+                  KeyboardButtonProps={ {
+                    'aria-label': 'change date',
+                  } }
+                />
+              </MuiPickersUtilsProvider>
+            </Grid>
+          </Grid>
+        </DialogTitle>
+        <Divider />
         <DialogContent>
           <Grid container direction='column'>
             {
@@ -287,4 +331,4 @@ const PatientPage: FC<PageProp> = () => {
   }
 }
 
-export default withResubAutoSubscriptions(PatientPage)
+export default withResubAutoSubscriptions(PrescriptionPage)
