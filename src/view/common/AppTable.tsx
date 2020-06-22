@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { FC, forwardRef } from 'react'
 import {
   AddBox, ArrowDownward, Check, ChevronLeft, ChevronRight,
   Clear, DeleteOutline, Edit, FilterList, FirstPage,
@@ -6,7 +6,15 @@ import {
 } from '@material-ui/icons'
 import MaterialTable, { Icons, Column, Components } from 'material-table'
 
-export default function AppTable<T extends Object>(props: AppTableProps<T>) {
+
+interface AppTableProps<T extends Object> {
+  title: string
+  data: T[]
+  columns: Column<T>[]
+  components?: Components
+}
+
+const AppTable: FC<AppTableProps<any>> = ({ title, data, columns, components }) => {
   const tableIcons: Icons = {
     Add: forwardRef((props, ref) => <AddBox { ...props } ref={ ref } />),
     Check: forwardRef((props, ref) => <Check { ...props } ref={ ref } />),
@@ -25,22 +33,14 @@ export default function AppTable<T extends Object>(props: AppTableProps<T>) {
     SortArrow: forwardRef((props, ref) => <ArrowDownward { ...props } ref={ ref } />),
     ThirdStateCheck: forwardRef((props, ref) => <Remove { ...props } ref={ ref } />),
     ViewColumn: forwardRef((props, ref) => <ViewColumn { ...props } ref={ ref } />)
-  };
-  const { title, data, columns, components } = props
-  return (
-    <MaterialTable
-      title={ title }
-      icons={ tableIcons }
-      columns={ columns }
-      data={ data }
-      components={ components }
-    />
-  )
+  }
+  return <MaterialTable
+    title={ title }
+    icons={ tableIcons }
+    columns={ columns }
+    data={ data }
+    components={ components }
+  />
 }
 
-interface AppTableProps<T extends Object> {
-  title: string
-  data: T[]
-  columns: Column<T>[]
-  components?: Components
-}
+export default AppTable

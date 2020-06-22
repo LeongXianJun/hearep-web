@@ -135,7 +135,6 @@ const AuthorizationPage: FC<PageProp> = () => {
       confirm: ''
     })
     const [ isSubmitting, setIsSubmitting ] = useState(false)
-    const [ err, setErr ] = useState('')
 
     const { email, password, confirm } = info
 
@@ -150,12 +149,12 @@ const AuthorizationPage: FC<PageProp> = () => {
             setIsSubmitting(false)
             history.replace('/register')
           })
-          .catch(err => setErr(err))
+          .catch(err => console.log(err))
       } else {
         throw new Error('Password is not matched')
       }
     })
-      .catch(err => setErr(err.message))
+      .catch(err => console.log(err.message))
 
     return (
       <Grid container spacing={ 1 } direction='column' justify='center' alignItems='center'>

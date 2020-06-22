@@ -9,3 +9,6 @@ export * from './AppTable'
 
 export { default as AppTabPanel } from './AppTabPanel'
 export * from './AppTabPanel'
+
+export { default as LineGraph } from './LineGraph'
+export * from './LineGraph'
