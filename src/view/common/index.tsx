@@ -12,3 +12,6 @@ export * from './AppTabPanel'
 
 export { default as LineGraph } from './LineGraph'
 export * from './LineGraph'
+
+export { default as LineGraphWithZoom } from './LineGraphwithZoom'
+export * from './LineGraphwithZoom'

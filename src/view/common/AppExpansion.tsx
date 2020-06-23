@@ -1,7 +1,7 @@
 import React, { FC } from 'react'
 import {
   ExpansionPanel, ExpansionPanelSummary, Typography, ExpansionPanelDetails, Grid,
-  Divider, ExpansionPanelActions
+  Divider, ExpansionPanelActions, CircularProgress
 } from '@material-ui/core'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
 
@@ -12,9 +12,10 @@ interface ComponentProp {
   subtitle?: string
   expandIcon?: React.ReactNode
   actions?: JSX.Element
+  isLoading?: boolean
 }
 
-const AppExpansion: FC<ComponentProp> = ({ children, defaultExpanded, title, subtitle, expandIcon, actions }) => {
+const AppExpansion: FC<ComponentProp> = ({ children, defaultExpanded, title, subtitle, expandIcon, actions, isLoading = false }) => {
   return (
     <ExpansionPanel defaultExpanded={ defaultExpanded } style={ { width: '100%' } }>
       <ExpansionPanelSummary
@@ -39,7 +40,13 @@ const AppExpansion: FC<ComponentProp> = ({ children, defaultExpanded, title, sub
       </ExpansionPanelSummary>
       <ExpansionPanelDetails>
         <Grid container direction='column' spacing={ 1 }>
-          { children }
+          {
+            isLoading
+              ? <Grid container direction='column' justify='center' alignItems='center' style={ { height: 200 } }>
+                <CircularProgress size={ 50 } />
+              </Grid>
+              : children
+          }
         </Grid>
       </ExpansionPanelDetails>
       {

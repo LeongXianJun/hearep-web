@@ -1,5 +1,5 @@
 import React, { FC, useEffect } from 'react'
-import { AppContainer, AppExpansion, LineGraph } from './common'
+import { AppContainer, AppExpansion, LineGraphWithZoom } from './common'
 import {
   Grid, makeStyles, Theme, createStyles, CardContent,
   Card, CardHeader, Table, TableBody, TableRow, TableCell
@@ -55,12 +55,12 @@ const Dashboard: FC<PageProp> = () => {
   const graphs: { title: string, graph: JSX.Element, defaultExpanded?: boolean }[] = [
     {
       title: 'Daily Appointment Handled',
-      graph: <LineGraph data={ HandledApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />,
+      graph: <LineGraphWithZoom data={ HandledApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />,
       defaultExpanded: true
     },
     {
       title: 'Daily New Appointment',
-      graph: <LineGraph data={ NewApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />
+      graph: <LineGraphWithZoom data={ NewApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />
     },
     {
       title: 'Average Consultation Time per day',
@@ -68,7 +68,7 @@ const Dashboard: FC<PageProp> = () => {
     }, // currently no way to get this
     {
       title: 'Average Waiting Time per day',
-      graph: <LineGraph data={ AverageWaitingTime.map(a => ({ x: a.day, y: a.averageTime })) } minZoom={ 2 } showSymbol yLabel='Average Time' />
+      graph: <LineGraphWithZoom data={ AverageWaitingTime.map(a => ({ x: a.day, y: a.averageTime })) } minZoom={ 2 } showSymbol yLabel='Average Time' />
     },
     {
       title: 'Overall Patient Satisfaction per day',

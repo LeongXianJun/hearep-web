@@ -1,43 +1,31 @@
 import React, { FC, useEffect } from 'react'
+import { AppContainer, AppExpansion, LineGraph } from '../common'
 import {
-  makeStyles, Theme, createStyles, Card, Grid,
-  Breadcrumbs, Link, Typography, TableBody, Table,
-  TableRow, TableCell, CardHeader, CardContent, Button,
-  TableHead
+  Grid, Breadcrumbs, Link, Typography, TableBody,
+  Table, TableRow, TableCell, Button, TableHead
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 
-import { AppContainer, AppExpansion } from '../common'
-import { maleAvatar, femaleAvatar, AmountGraph } from '../../resources/images'
+import { maleAvatar, femaleAvatar } from '../../resources/images'
 import {
-  UserStore, HealthRecordStore, Patient,
-  AppointmentStore, Appointment, HealthRecord
+  UserStore, HealthRecordStore, Patient, AppointmentStore,
+  Appointment, HealthRecord, HealthConditionStore
 } from '../../stores'
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    img: {
-      margin: 'auto',
-      display: 'block',
-      maxWidth: '100%',
-      maxHeight: '100%',
-    }
-  }),
-)
 
 interface PageProp {
 
 }
 
 const PatientDetailPage: FC<PageProp> = () => {
-  const styles = useStyles()
   const history = useHistory()
   const isReady = UserStore.ready()
   const patient = HealthRecordStore.getSelectedPatient()
   const healthRecords = HealthRecordStore.getHealthRecords()
   const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
+  const isHCReady = HealthConditionStore.ready()
+  const healthConditions = HealthConditionStore.getHealthCondition()
   const { healthPrescriptions, labTestResults } = healthRecords
   const Accepted = appointments.Accepted.filter(app => app.patientId === patient?.id)
 
@@ -49,12 +37,14 @@ const PatientDetailPage: FC<PageProp> = () => {
 
   useEffect(() => {
     if (isReady && patient) {
-      HealthRecordStore.fetchPatientRecords(patient.id)
-        .catch(err => {
-          if (err.message.includes('No more record') === false) {
-            console.error(err)
-          }
-        })
+      Promise.all([
+        HealthRecordStore.fetchPatientRecords(patient.id),
+        HealthConditionStore.fetchHealthCondition(patient.id)
+      ]).catch(err => {
+        if (err.message.includes('No more record') === false) {
+          console.error(err)
+        }
+      })
     }
   }, [ isReady, patient ])
 
@@ -121,7 +111,7 @@ const PatientDetailPage: FC<PageProp> = () => {
           }
           <AppExpansion
             title='Medical Prescription'
-            actions={ <Button size="small" onClick={ () => history.push('/prescription/add') }>Add</Button> }
+            actions={ <Button size="small" onClick={ () => history.push('/prescription/add') } color='primary'>{ 'Add' }</Button> }
           >
             <Table>
               <TableBody>
@@ -140,7 +130,7 @@ const PatientDetailPage: FC<PageProp> = () => {
           </AppExpansion>
           <AppExpansion
             title='Lab Test Result'
-            actions={ <Button size="small" onClick={ () => history.push('/labTest/add') }>Add</Button> }
+            actions={ <Button size="small" onClick={ () => history.push('/labTest/add') } color='primary'>{ 'Add' }</Button> }
           >
             <Table>
               <TableBody>
@@ -222,23 +212,28 @@ const PatientDetailPage: FC<PageProp> = () => {
               </TableBody>
             </Table>
           </AppExpansion>
-          <AppExpansion title='Health Analysis'>
-            <Grid container direction='column' spacing={ 1 }>
-              {
-                [
-                  { title: 'Blood Sugar Level', graph: <img className={ styles.img } alt='amount' src={ AmountGraph } /> },
-                  { title: 'Blood Pressure', graph: <img className={ styles.img } alt='amount' src={ AmountGraph } /> },
-                  { title: 'BMI', graph: <img className={ styles.img } alt='amount' src={ AmountGraph } /> }
-                ].map(({ title, graph }, index) =>
-                  <Grid key={ 'graph-' + index } item xs={ 12 }>
-                    <Card>
-                      <CardHeader title={ title } />
-                      <CardContent>{ graph }</CardContent>
-                    </Card>
-                  </Grid>
-                )
-              }
-            </Grid>
+          <AppExpansion title='Health Analysis' isLoading={ isHCReady === false }>
+            {
+              [
+                {
+                  title: 'Blood Sugar Level',
+                  graph: <LineGraph data={ healthConditions[ 'Blood Sugar Level' ].map(a => ({ x: a.day, y: a.count })) } showSymbol yLabel='Count' />,
+                  defaultExpended: true
+                },
+                {
+                  title: 'Blood Pressure',
+                  graph: <LineGraph data={ healthConditions[ 'Blood Pressure Level' ].map(a => ({ x: a.day, y: a.count })) } showSymbol yLabel='Count' />
+                },
+                {
+                  title: 'BMI',
+                  graph: <LineGraph data={ healthConditions[ 'BMI' ].map(a => ({ x: a.day, y: a.count })) } showSymbol yLabel='Count' />
+                }
+              ].map(({ title, graph, defaultExpended }, index) =>
+                <AppExpansion key={ 'graph-' + index } title={ title } defaultExpanded={ defaultExpended }>
+                  { graph }
+                </AppExpansion>
+              )
+            }
           </AppExpansion>
         </Grid>
       </Grid>
