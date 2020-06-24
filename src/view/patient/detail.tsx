@@ -217,16 +217,16 @@ const PatientDetailPage: FC<PageProp> = () => {
               [
                 {
                   title: 'Blood Sugar Level',
-                  graph: <LineGraph data={ healthConditions[ 'Blood Sugar Level' ].map(a => ({ x: a.day, y: a.count })) } showSymbol yLabel='Count' />,
+                  graph: <LineGraph data={ healthConditions[ 'Blood Sugar Level' ].map(a => ({ x: a.day, y: a.length > 0 ? a.count / a.length : 0 })) } showSymbol yLabel='Count' />,
                   defaultExpended: true
                 },
                 {
                   title: 'Blood Pressure',
-                  graph: <LineGraph data={ healthConditions[ 'Blood Pressure Level' ].map(a => ({ x: a.day, y: a.count })) } showSymbol yLabel='Count' />
+                  graph: <LineGraph data={ healthConditions[ 'Blood Pressure Level' ].map(a => ({ x: a.day, y: a.length > 0 ? a.count / a.length : 0 })) } showSymbol yLabel='Count' />
                 },
                 {
                   title: 'BMI',
-                  graph: <LineGraph data={ healthConditions[ 'BMI' ].map(a => ({ x: a.day, y: a.count })) } showSymbol yLabel='Count' />
+                  graph: <LineGraph data={ healthConditions[ 'BMI' ].map(a => ({ x: a.day, y: a.length > 0 ? a.count / a.length : 0 })) } showSymbol yLabel='Count' />
                 }
               ].map(({ title, graph, defaultExpended }, index) =>
                 <AppExpansion key={ 'graph-' + index } title={ title } defaultExpanded={ defaultExpended }>

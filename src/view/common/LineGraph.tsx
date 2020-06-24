@@ -36,6 +36,7 @@ const LineGraph: FC<ComponentProps> = ({ data, color = 'tomato', showSymbol, yLa
               <VictoryTooltip
                 style={ { fill: color, fontSize: '10px' } }
                 flyoutStyle={ { stroke: color, strokeWidth: 0.5 } }
+                renderInPortal={ false }
               />
             }
           >

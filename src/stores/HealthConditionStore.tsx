@@ -7,9 +7,9 @@ class HealthConditionStore extends StoreBase {
   isReady: boolean
   currentPatientId: string
   healthCondition: {
-    'Blood Sugar Level': { day: Date, count: number }[],
-    'Blood Pressure Level': { day: Date, count: number }[],
-    'BMI': { day: Date, count: number }[],
+    'Blood Sugar Level': { day: Date, count: number, length: number }[],
+    'Blood Pressure Level': { day: Date, count: number, length: number }[],
+    'BMI': { day: Date, count: number, length: number }[],
   }
   constructor() {
     super()
@@ -50,9 +50,9 @@ class HealthConditionStore extends StoreBase {
               this.isReady = true
               this.currentPatientId = patientId
               this.healthCondition = {
-                'Blood Sugar Level': data[ 'Blood Sugar Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count })),
-                'Blood Pressure Level': data[ 'Blood Pressure Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count })),
-                'BMI': data[ 'BMI' ].map((d: any) => ({ day: new Date(d.day), count: d.count }))
+                'Blood Sugar Level': data[ 'Blood Sugar Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
+                'Blood Pressure Level': data[ 'Blood Pressure Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
+                'BMI': data[ 'BMI' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length }))
               }
               this.trigger([ HealthConditionStore.HealthConditionKey, HealthConditionStore.HCReadyKey ])
             }

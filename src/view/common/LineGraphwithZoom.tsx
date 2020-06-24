@@ -58,6 +58,7 @@ const LineGraphWithZoom: FC<ComponentProps> = ({ data, color = 'tomato', minZoom
               <VictoryTooltip
                 style={ { fill: color, fontSize: '10px' } }
                 flyoutStyle={ { stroke: color, strokeWidth: 0.5 } }
+                renderInPortal={ false }
               />
             }
           >
