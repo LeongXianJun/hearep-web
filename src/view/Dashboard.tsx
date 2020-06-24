@@ -1,5 +1,5 @@
 import React, { FC, useEffect } from 'react'
-import { AppContainer, AppExpansion } from './common'
+import { AppContainer, AppExpansion, LineGraphWithZoom } from './common'
 import {
   Grid, makeStyles, Theme, createStyles, CardContent,
   Card, CardHeader, Table, TableBody, TableRow, TableCell
@@ -7,7 +7,7 @@ import {
 import { withResubAutoSubscriptions } from 'resub'
 
 import { NumGraph, TimeGraph } from '../resources/images'
-import { UserStore, HealthRecordStore, MedicationRecord, AppointmentStore, Appointment } from '../stores'
+import { UserStore, MedicationRecord, AppointmentStore, Appointment, AnalysisStore } from '../stores'
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -28,10 +28,11 @@ const Dashboard: FC<PageProp> = () => {
   const styles = useStyles()
   const isReady = UserStore.ready()
   const patients = UserStore.getPatients()
-  // nid to replace with something
-  const records = HealthRecordStore.getHealthRecords()
   const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
+  const isAnaReady = AnalysisStore.ready()
+  const performanceAnalysis = AnalysisStore.getAnalysis()
+  const { HandledApp, NewApp, AverageWaitingTime } = performanceAnalysis
 
   useEffect(() => {
     if (isReady && patients.length === 0)
@@ -45,15 +46,38 @@ const Dashboard: FC<PageProp> = () => {
         .catch(err => console.log(err))
   }, [ isReady, appointments, isAppStoreReady ])
 
-  const graphs: { title: string, graph: JSX.Element }[] = [
-    { title: 'Daily Appointment Handled', graph: <img className={ styles.img } alt='num' src={ NumGraph } /> },
-    { title: 'Average Consultation Time per day', graph: <img className={ styles.img } alt='time' src={ TimeGraph } /> },
-    { title: 'Average Waiting Time per day', graph: <img className={ styles.img } alt='time' src={ TimeGraph } /> },
-    { title: 'Overall Patient Satisfaction per day', graph: <img className={ styles.img } alt='num' src={ NumGraph } /> }
+  useEffect(() => {
+    if (isReady)
+      AnalysisStore.fetchPerformanceAnalysis()
+        .catch(err => console.log(err))
+  }, [ isReady ])
+
+  const graphs: { title: string, graph: JSX.Element, defaultExpanded?: boolean }[] = [
+    {
+      title: 'Daily Appointment Handled',
+      graph: <LineGraphWithZoom data={ HandledApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />,
+      defaultExpanded: true
+    },
+    {
+      title: 'Daily New Appointment',
+      graph: <LineGraphWithZoom data={ NewApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />
+    },
+    {
+      title: 'Average Consultation Time per day',
+      graph: <img className={ styles.img } alt='time' src={ TimeGraph } />
+    }, // currently no way to get this
+    {
+      title: 'Average Waiting Time per day',
+      graph: <LineGraphWithZoom data={ AverageWaitingTime.map(a => ({ x: a.day, y: a.averageTime })) } minZoom={ 2 } showSymbol yLabel='Average Time' />
+    },
+    {
+      title: 'Overall Patient Satisfaction per day',
+      graph: <img className={ styles.img } alt='num' src={ NumGraph } />
+    } // currently no way to get this (require patient to rate the doctor)
   ]
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isReady === false || isAnaReady === false }>
       <Grid container direction='row' justify='center' spacing={ 3 }>
         <Grid item xs={ 12 } sm={ 8 } lg={ 9 } style={ { width: '100%', height: '100%' } }>
           <Card>
@@ -62,8 +86,8 @@ const Dashboard: FC<PageProp> = () => {
             />
             <CardContent>
               {
-                graphs.map(({ title, graph: data }, index) =>
-                  <AppExpansion title={ title } key={ 'exp-' + index }>
+                graphs.map(({ title, graph: data, defaultExpanded }, index) =>
+                  <AppExpansion title={ title } key={ 'exp-' + index } defaultExpanded={ defaultExpanded }>
                     { data }
                   </AppExpansion>
                 )
@@ -72,7 +96,7 @@ const Dashboard: FC<PageProp> = () => {
           </Card>
         </Grid>
         {
-          appointments[ 'Waiting' ].length > 0 || appointments[ 'Accepted' ].length > 0 || records[ 'healthPrescriptions' ].length > 0 || records[ 'labTestResults' ].length > 0
+          appointments[ 'Waiting' ].length > 0 || appointments[ 'Accepted' ].length > 0 //|| records[ 'healthPrescriptions' ].length > 0 || records[ 'labTestResults' ].length > 0
             ? <Grid item xs={ 12 } sm={ 4 } lg={ 3 } style={ { width: '100%' } }>
               { leftBar() }
             </Grid>
@@ -90,7 +114,7 @@ const Dashboard: FC<PageProp> = () => {
         />
         <CardContent>
           { notificationExp('Nearing Appointments', [ ...appointments[ 'Waiting' ], ...appointments[ 'Accepted' ] ]) }
-          { notificationExp('Medication Refill Reminder', records[ 'healthPrescriptions' ].flatMap(hp => hp.medicationRecords)) }
+          {/* { notificationExp('Medication Refill Reminder', records[ 'healthPrescriptions' ].flatMap(hp => hp.medicationRecords)) } */ }
         </CardContent>
       </Card>
     )
