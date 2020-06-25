@@ -1,6 +1,6 @@
 import React, { FC } from 'react'
 import {
-  VictoryChart, VictoryLine, VictoryTooltip, VictoryGroup, VictoryScatter, VictoryVoronoiContainer
+  VictoryChart, VictoryLine, VictoryTooltip, VictoryGroup, VictoryScatter, VictoryVoronoiContainer, VictoryAxis
 } from 'victory'
 import { Grid } from '@material-ui/core'
 
@@ -17,15 +17,20 @@ const LineGraph: FC<ComponentProps> = ({ data, color = 'tomato', showSymbol, yLa
       <Grid item xs>
         <VictoryChart
           animate={ { duration: 2000 } }
-          height={ 200 }
+          height={ 250 }
           minDomain={ { y: 0 } }
           scale={ { x: data[ 0 ]?.x instanceof Date ? "time" : 'linear' } }
-          padding={ { top: 30, left: 30, right: 30, bottom: 30 } }
+          padding={ { top: 40, left: 40, right: 40, bottom: 30 } }
           domainPadding={ { x: 5, y: 5 } }
           containerComponent={
             <VictoryVoronoiContainer />
           }
         >
+          <VictoryAxis dependentAxis
+            tickValues={ data.map(d => d.y) }
+            tickFormat={ y => y.toPrecision(3) }
+          />
+          <VictoryAxis />
           <VictoryGroup
             style={ {
               data: { stroke: color }
