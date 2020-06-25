@@ -1,7 +1,7 @@
 import React, { FC, useState } from 'react'
 import {
   VictoryChart, VictoryLine, VictoryBrushContainer, VictoryAxis,
-  DomainTuple, VictoryTooltip, createContainer, VictoryGroup, VictoryScatter
+  DomainTuple, VictoryTooltip, createContainer, VictoryGroup, VictoryScatter,
 } from 'victory'
 import { Grid } from '@material-ui/core'
 import { VictoryZoomContainerProps } from 'victory-zoom-container'
@@ -34,10 +34,10 @@ const LineGraphWithZoom: FC<ComponentProps> = ({ data, color = 'tomato', minZoom
       <Grid item xs>
         <VictoryChart
           animate={ { duration: 2000 } }
-          height={ 200 }
+          height={ 250 }
           minDomain={ { y: 0 } }
           scale={ { x: data[ 0 ]?.x instanceof Date ? "time" : 'linear' } }
-          padding={ { top: 30, left: 30, right: 30, bottom: 30 } }
+          padding={ { top: 40, left: 40, right: 40, bottom: 30 } }
           domainPadding={ { x: 5, y: 5 } }
           containerComponent={
             <VictoryZoomVoronoiContainer
@@ -48,6 +48,11 @@ const LineGraphWithZoom: FC<ComponentProps> = ({ data, color = 'tomato', minZoom
             />
           }
         >
+          <VictoryAxis dependentAxis
+            tickValues={ data.map(d => d.y) }
+            tickFormat={ y => y.toPrecision(3) }
+          />
+          <VictoryAxis />
           <VictoryGroup
             style={ {
               data: { stroke: color }
@@ -71,7 +76,7 @@ const LineGraphWithZoom: FC<ComponentProps> = ({ data, color = 'tomato', minZoom
           height={ 60 }
           minDomain={ { y: 0 } }
           scale={ { x: data[ 0 ]?.x instanceof Date ? "time" : 'linear' } }
-          padding={ { top: 0, left: 30, right: 30, bottom: 30 } }
+          padding={ { top: 0, left: 40, right: 40, bottom: 30 } }
           domainPadding={ { x: 5, y: 5 } }
           containerComponent={
             <VictoryBrushContainer

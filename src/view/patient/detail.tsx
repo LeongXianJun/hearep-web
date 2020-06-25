@@ -10,7 +10,7 @@ import { withResubAutoSubscriptions } from 'resub'
 import { maleAvatar, femaleAvatar } from '../../resources/images'
 import {
   UserStore, HealthRecordStore, Patient, AppointmentStore,
-  Appointment, HealthRecord, HealthConditionStore
+  Appointment, HealthRecord, HealthAnalysisStore
 } from '../../stores'
 
 interface PageProp {
@@ -24,8 +24,8 @@ const PatientDetailPage: FC<PageProp> = () => {
   const healthRecords = HealthRecordStore.getHealthRecords()
   const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
-  const isHCReady = HealthConditionStore.ready()
-  const healthConditions = HealthConditionStore.getHealthCondition()
+  const isHCReady = HealthAnalysisStore.ready()
+  const healthConditions = HealthAnalysisStore.getHealthCondition()
   const { healthPrescriptions, labTestResults } = healthRecords
   const Accepted = appointments.Accepted.filter(app => app.patientId === patient?.id)
 
@@ -39,7 +39,7 @@ const PatientDetailPage: FC<PageProp> = () => {
     if (isReady && patient) {
       Promise.all([
         HealthRecordStore.fetchPatientRecords(patient.id),
-        HealthConditionStore.fetchHealthCondition(patient.id)
+        HealthAnalysisStore.fetchHealthAnalysis(patient.id)
       ]).catch(err => {
         if (err.message.includes('No more record') === false) {
           console.error(err)
@@ -216,9 +216,13 @@ const PatientDetailPage: FC<PageProp> = () => {
             {
               [
                 {
-                  title: 'Blood Sugar Level',
-                  graph: <LineGraph data={ healthConditions[ 'Blood Sugar Level' ].map(a => ({ x: a.day, y: a.length > 0 ? a.count / a.length : 0 })) } showSymbol yLabel='Count' />,
+                  title: 'Sickness Frequency',
+                  graph: <LineGraph data={ healthConditions[ 'Sickness Frequency' ].map(a => ({ x: a.month, y: a.count })) } showSymbol yLabel='Turn' />,
                   defaultExpended: true
+                },
+                {
+                  title: 'Blood Sugar Level',
+                  graph: <LineGraph data={ healthConditions[ 'Blood Sugar Level' ].map(a => ({ x: a.day, y: a.length > 0 ? a.count / a.length : 0 })) } showSymbol yLabel='Count' />
                 },
                 {
                   title: 'Blood Pressure',

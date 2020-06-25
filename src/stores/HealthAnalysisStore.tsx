@@ -3,10 +3,11 @@ import { UserStore } from '.'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
-class HealthConditionStore extends StoreBase {
+class HealthAnalysisStore extends StoreBase {
   isReady: boolean
   currentPatientId: string
   healthCondition: {
+    'Sickness Frequency': { month: Date, count: number }[],
     'Blood Sugar Level': { day: Date, count: number, length: number }[],
     'Blood Pressure Level': { day: Date, count: number, length: number }[],
     'BMI': { day: Date, count: number, length: number }[],
@@ -16,6 +17,7 @@ class HealthConditionStore extends StoreBase {
     this.isReady = false
     this.currentPatientId = ''
     this.healthCondition = {
+      'Sickness Frequency': [],
       'Blood Sugar Level': [],
       'Blood Pressure Level': [],
       'BMI': [],
@@ -24,11 +26,11 @@ class HealthConditionStore extends StoreBase {
 
   private getToken = () => UserStore.getToken()
 
-  fetchHealthCondition = (patientId: string) =>
+  fetchHealthAnalysis = (patientId: string) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         if (userToken) {
-          await fetch('http://localhost:8001/healthCondition/get', {
+          await fetch('http://localhost:8001/analysis/patient', {
             method: 'POST',
             headers: {
               Accept: 'application/json',
@@ -44,17 +46,18 @@ class HealthConditionStore extends StoreBase {
           }).then(data => {
             if (data.errors) {
               this.isReady = false
-              this.trigger([ HealthConditionStore.HCReadyKey ])
+              this.trigger([ HealthAnalysisStore.HCReadyKey ])
               throw new Error(data.errors)
             } else {
               this.isReady = true
               this.currentPatientId = patientId
               this.healthCondition = {
+                'Sickness Frequency': data[ 'Sickness Frequency' ].map((d: any) => ({ month: new Date(d.month), count: d.count })),
                 'Blood Sugar Level': data[ 'Blood Sugar Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
                 'Blood Pressure Level': data[ 'Blood Pressure Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
                 'BMI': data[ 'BMI' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length }))
               }
-              this.trigger([ HealthConditionStore.HealthConditionKey, HealthConditionStore.HCReadyKey ])
+              this.trigger([ HealthAnalysisStore.HealthConditionKey, HealthAnalysisStore.HCReadyKey ])
             }
           }).catch(err => Promise.reject(new Error('Fetch Analysis: ' + err.message)))
         } else {
@@ -76,4 +79,4 @@ class HealthConditionStore extends StoreBase {
   }
 }
 
-export default new HealthConditionStore()
+export default new HealthAnalysisStore()

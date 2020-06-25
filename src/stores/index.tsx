@@ -13,5 +13,5 @@ export * from './WorkingTimeStore'
 export { default as AnalysisStore } from './AnalysisStore'
 export * from './AnalysisStore'
 
-export { default as HealthConditionStore } from './HealthConditionStore'
-export * from './HealthConditionStore'
+export { default as HealthAnalysisStore } from './HealthAnalysisStore'
+export * from './HealthAnalysisStore'
