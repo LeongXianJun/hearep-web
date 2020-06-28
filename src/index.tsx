@@ -1,14 +1,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import './index.css'
-import App from './view/App'
-import * as serviceWorker from './serviceWorker'
 import { BrowserRouter } from 'react-router-dom'
+import { SnackbarProvider } from 'notistack'
 import firebase from 'firebase'
+import loadable from '@loadable/component'
+
+import './index.css'
+import * as serviceWorker from './serviceWorker'
 
 firebase.initializeApp({
   apiKey: process.env.REACT_APP_ApiKey,
-  applicationId: process.env.REACT_APP_AppId,
+  appId: process.env.REACT_APP_AppId,
   authDomain: process.env.REACT_APP_AuthDomain,
   databaseURL: process.env.REACT_APP_DatabaseURL,
   projectId: process.env.REACT_APP_ProjectId,
@@ -16,11 +18,18 @@ firebase.initializeApp({
   messagingSenderId: process.env.REACT_APP_MessagingSenderId
 })
 
+const App = loadable(() => import('./view/App'))
+const NotificationManager = loadable(() => import('./view/NotificationManager'))
+
 ReactDOM.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <SnackbarProvider>
+      <NotificationManager>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </NotificationManager>
+    </SnackbarProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )

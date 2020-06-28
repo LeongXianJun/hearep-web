@@ -15,3 +15,6 @@ export * from './AnalysisStore'
 
 export { default as HealthAnalysisStore } from './HealthAnalysisStore'
 export * from './HealthAnalysisStore'
+
+export { default as NotificationStore } from './NotificationStore'
+export * from './NotificationStore'
