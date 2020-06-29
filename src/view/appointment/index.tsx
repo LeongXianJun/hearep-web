@@ -50,8 +50,8 @@ const AppointmentPage: FC<PageProp> = () => {
         .catch(err => console.log(err))
   }, [ isReady, isWTReady, TimeInterval ])
 
-  const updateStatus = (id: string, status: 'Accepted' | 'Rejected') => () =>
-    AppointmentStore.updateStatus({ id, status })
+  const updateStatus = (id: string, patientId: string, status: 'Accepted' | 'Rejected') => () =>
+    AppointmentStore.updateStatus({ id, patientId, status })
 
   return (
     <AppContainer isLoading={ isReady === false }>
@@ -121,8 +121,8 @@ const AppointmentPage: FC<PageProp> = () => {
                                 {
                                   category === 'Pending'
                                     ? <TableCell>
-                                      <Button size="small" onClick={ updateStatus(appointment.id, 'Accepted') } variant='contained' color='primary'>{ 'Accept' }</Button>
-                                      <Button size="small" onClick={ updateStatus(appointment.id, 'Rejected') } color='secondary' style={ { marginLeft: 10 } }>{ 'Reject' }</Button>
+                                      <Button size="small" onClick={ updateStatus(appointment.id, appointment.patientId, 'Accepted') } variant='contained' color='primary'>{ 'Accept' }</Button>
+                                      <Button size="small" onClick={ updateStatus(appointment.id, appointment.patientId, 'Rejected') } color='secondary' style={ { marginLeft: 10 } }>{ 'Reject' }</Button>
                                     </TableCell>
                                     : undefined
                                 }

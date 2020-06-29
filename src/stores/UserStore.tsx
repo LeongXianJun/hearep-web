@@ -1,5 +1,6 @@
 import qs from 'qs'
 import firebase from 'firebase'
+import NotificationStore from './NotificationStore'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -21,6 +22,20 @@ class UserStore extends StoreBase {
     if (firebaseUser) {
       // console.log('1', firebaseUser.uid)
       this.setFirebaseUser(firebaseUser)
+
+      // Get Instance ID token. Initially this makes a network call, once retrieved subsequent calls to getToken will return from cache.
+      firebase.messaging().getToken().then((currentToken) => {
+        if (currentToken) {
+          NotificationStore.sendTokenToServer(currentToken)
+          if (Notification.permission === 'default')
+            Notification.requestPermission()
+        } else {
+          throw new Error('No Instance ID token available. Request permission to generate one.')
+        }
+      }).catch(err =>
+        window.localStorage.setItem('sentToServer', '0')
+      )
+
       if (this.isRegistering === false) {
         this.fetchUser().then(() => {
           this.isReady = true

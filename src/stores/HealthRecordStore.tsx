@@ -88,7 +88,7 @@ class HealthRecordStore extends StoreBase {
       }
     })
 
-  updateHealthRecord = ({ type, ...input }: { id: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
+  updateHealthRecord = ({ type, ...input }: { id: string, patientId: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch('http://localhost:8001/healthrecords/update', {
