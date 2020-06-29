@@ -18,3 +18,6 @@ export * from './HealthAnalysisStore'
 
 export { default as NotificationStore } from './NotificationStore'
 export * from './NotificationStore'
+
+export { default as AccessPermissionStore } from './AccessPermissionStore'
+export * from './AccessPermissionStore'

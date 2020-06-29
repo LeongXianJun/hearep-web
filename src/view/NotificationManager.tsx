@@ -29,7 +29,7 @@ const NotificationManager: FC<ManagerProps> = ({ children }) => {
           <CustomSnackBar id={ key } message={ n } />
       })
     })
-  }, [ notifications ])
+  }, [ notifications, enqueueSnackbar ])
 
   return <>
     { children }
