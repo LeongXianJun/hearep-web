@@ -119,7 +119,7 @@ class AppointmentStore extends StoreBase {
     })
 
   // update status
-  updateStatus = (input: { id: string, status: 'Accepted' | 'Rejected' }) =>
+  updateStatus = (input: { id: string, patientId: string, status: 'Accepted' | 'Rejected' }) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch('http://localhost:8001/appointment/update', {

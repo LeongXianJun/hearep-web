@@ -1,5 +1,8 @@
 import React, { FC, useEffect, useState } from 'react'
-import { Card, CardActions, IconButton, Paper, Collapse, makeStyles, Typography } from '@material-ui/core'
+import {
+  Card, CardActions, IconButton, Paper, Collapse,
+  makeStyles, Typography
+} from '@material-ui/core'
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon } from '@material-ui/icons'
 import { withResubAutoSubscriptions } from 'resub'
 import { useSnackbar } from 'notistack'
@@ -54,9 +57,6 @@ const useStyles = makeStyles(theme => ({
   actionRoot: {
     padding: '8px 8px 8px 16px',
   },
-  icons: {
-    marginLeft: 'auto',
-  },
   expand: {
     padding: '8px 8px',
     transform: 'rotate(0deg)',
@@ -101,11 +101,11 @@ const CustomSnackBar: FC<ComponentProps> = React.forwardRef(({ id, message }, re
 
   return <Card className={ classes.card } ref={ ref }>
     <CardActions className={ classes.actionRoot }>
-      <Typography variant="subtitle2" className={ classes.typography }>{ message.title }</Typography>
-      <div className={ classes.icons }>
+      <Typography variant='subtitle2' className={ classes.typography }>{ message.title }</Typography>
+      <div style={ { marginLeft: 'auto' } }>
         <IconButton
           aria-label="Show more"
-          className={ classes.expand + (expanded ? classes.expandOpen : '') }
+          className={ classes.expand + ' ' + (expanded ? classes.expandOpen : '') }
           onClick={ handleExpandClick }
         >
           <ExpandMoreIcon />
