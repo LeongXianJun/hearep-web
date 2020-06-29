@@ -24,7 +24,7 @@ const AppointmentHistory: FC<PageProp> = () => {
 
   useEffect(() => {
     if (isReady && patients.length === 0)
-      UserStore.fetchAllPatient()
+      UserStore.fetchAllPatients()
         .catch(err => console.log(err))
   }, [ isReady, patients ])
 
