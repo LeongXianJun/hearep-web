@@ -1,5 +1,6 @@
 import qs from 'qs'
-import { UserStore, Patient } from '.'
+import { CommonUtil } from '../utils'
+import UserStore, { Patient } from './UserStore'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -20,7 +21,7 @@ class HealthRecordStore extends StoreBase {
   fetchPatientRecords = (patientId: string) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/healthrecords/medicalstaff', {
+        await fetch(CommonUtil.getURL() + '/healthrecords/medicalstaff', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -53,7 +54,7 @@ class HealthRecordStore extends StoreBase {
   insertHealthRecord = (input: { patientId: string, date: Date } & ({ type: 'Health Prescription', appId?: string, illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', appId?: string, title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        return await fetch('http://localhost:8001/healthrecords/insert', {
+        return await fetch(CommonUtil.getURL() + '/healthrecords/insert', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -91,7 +92,7 @@ class HealthRecordStore extends StoreBase {
   updateHealthRecord = ({ type, ...input }: { id: string, patientId: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/healthrecords/update', {
+        await fetch(CommonUtil.getURL() + '/healthrecords/update', {
           method: 'PUT',
           headers: {
             Accept: 'application/json',
@@ -123,7 +124,7 @@ class HealthRecordStore extends StoreBase {
   removeHealthRecord = (id: string) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/healthrecords/delete', {
+        await fetch(CommonUtil.getURL() + '/healthrecords/delete', {
           method: 'PUT',
           headers: {
             Accept: 'application/json',

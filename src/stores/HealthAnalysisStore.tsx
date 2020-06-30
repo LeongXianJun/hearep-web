@@ -1,5 +1,6 @@
 import qs from 'qs'
-import { UserStore } from '.'
+import UserStore from './UserStore'
+import { CommonUtil } from '../utils'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -30,7 +31,7 @@ class HealthAnalysisStore extends StoreBase {
     this.getToken().then(async userToken => {
       if (userToken) {
         if (userToken) {
-          await fetch('http://localhost:8001/analysis/patient', {
+          await fetch(CommonUtil.getURL() + '/analysis/patient', {
             method: 'POST',
             headers: {
               Accept: 'application/json',

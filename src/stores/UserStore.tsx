@@ -1,5 +1,6 @@
 import qs from 'qs'
 import firebase from 'firebase'
+import { CommonUtil } from '../utils'
 import NotificationStore from './NotificationStore'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
@@ -58,7 +59,7 @@ class UserStore extends StoreBase {
   fetchUser = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/user/get', {
+        await fetch(CommonUtil.getURL() + '/user/get', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -83,7 +84,7 @@ class UserStore extends StoreBase {
   fetchAllPatient = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/patient/all', {
+        await fetch(CommonUtil.getURL() + '/patient/all', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -112,7 +113,7 @@ class UserStore extends StoreBase {
   createUser = (info: { username: string, dob: string, gender: 'M' | 'F', medicalInstituition: MedicalInstituition }) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/user/create', {
+        await fetch(CommonUtil.getURL() + '/user/create', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -146,7 +147,7 @@ class UserStore extends StoreBase {
   updateProfile = (latest: { username: string, dob: string, gender: 'M' | 'F', medicalInstituition: MedicalInstituition }) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/user/update', {
+        await fetch(CommonUtil.getURL() + '/user/update', {
           method: 'PUT',
           headers: {
             Accept: 'application/json',
@@ -184,7 +185,7 @@ class UserStore extends StoreBase {
   removeAccount = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/user/delete', {
+        await fetch(CommonUtil.getURL() + '/user/delete', {
           method: 'PUT',
           headers: {
             Accept: 'application/json',
@@ -213,7 +214,7 @@ class UserStore extends StoreBase {
   updateWorkingTime = (workingTime: WorkingTime) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/workingtime/update', {
+        await fetch(CommonUtil.getURL() + '/workingtime/update', {
           method: 'PUT',
           headers: {
             Accept: 'application/json',

@@ -1,6 +1,7 @@
 import qs from 'qs'
 import firebase from 'firebase'
 import UserStore from './UserStore'
+import { CommonUtil } from '../utils'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -37,7 +38,7 @@ class NotificationStore extends StoreBase {
     if (window.localStorage.getItem('sentToServer') !== '1') {
       this.getToken().then(async userToken => {
         if (userToken) {
-          await fetch('http://localhost:8001/user/device', {
+          await fetch(CommonUtil.getURL() + '/user/device', {
             method: 'PUT',
             headers: {
               Accept: 'application/json',

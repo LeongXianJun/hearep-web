@@ -1,5 +1,6 @@
 import qs from 'qs'
-import { UserStore } from '.'
+import UserStore from './UserStore'
+import { CommonUtil } from '../utils'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -26,7 +27,7 @@ class AnalysisStore extends StoreBase {
     this.getToken().then(async userToken => {
       if (userToken) {
         if (userToken) {
-          await fetch('http://localhost:8001/analysis/get', {
+          await fetch(CommonUtil.getURL() + '/analysis/get', {
             method: 'POST',
             headers: {
               Accept: 'application/json',

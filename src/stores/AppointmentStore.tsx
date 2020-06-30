@@ -1,5 +1,6 @@
 import qs from 'qs'
-import { UserStore } from '.'
+import UserStore from './UserStore'
+import { CommonUtil } from '../utils'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -35,7 +36,7 @@ class AppointmentStore extends StoreBase {
   fetchAllAppointments = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/appointment/medicalstaff', {
+        await fetch(CommonUtil.getURL() + '/appointment/medicalstaff', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -86,7 +87,7 @@ class AppointmentStore extends StoreBase {
   fetchPatientAppointment = (appId: string) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/appointment/get', {
+        await fetch(CommonUtil.getURL() + '/appointment/get', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -122,7 +123,7 @@ class AppointmentStore extends StoreBase {
   updateStatus = (input: { id: string, patientId: string, status: 'Accepted' | 'Rejected' }) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/appointment/update', {
+        await fetch(CommonUtil.getURL() + '/appointment/update', {
           method: 'PUT',
           headers: {
             Accept: 'application/json',

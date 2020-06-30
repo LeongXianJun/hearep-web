@@ -1,5 +1,6 @@
 import qs from 'qs'
-import { UserStore } from '.'
+import UserStore from './UserStore'
+import { CommonUtil } from '../utils'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -18,7 +19,7 @@ class TimeIntervalStore extends StoreBase {
   fetchTimeInterval = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        await fetch('http://localhost:8001/workingtime/timeinterval', {
+        await fetch(CommonUtil.getURL() + '/workingtime/timeinterval', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
