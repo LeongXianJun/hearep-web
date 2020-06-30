@@ -2,6 +2,7 @@ import qs from 'qs'
 import firebase from 'firebase'
 import UserStore from './UserStore'
 import { CommonUtil } from '../utils'
+import AccessPermissionStore from './AccessPermissionStore'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -28,10 +29,18 @@ class NotificationStore extends StoreBase {
 
   unsubscribeOnMessage = navigator.serviceWorker.addEventListener('message', payload => {
     const { data: { 'firebase-messaging-msg-data': { data } } } = payload
-    this.notification = [
-      { title: data.title, description: data.description }
-    ]
-    this.trigger(NotificationStore.NotificationsKey)
+    if (data.status) {
+      if (data.status === 'Permitted') {
+        AccessPermissionStore.setIsWaiting(false, true)
+      } else {
+        AccessPermissionStore.setIsWaiting(false, false)
+      }
+    } else {
+      this.notification = [
+        { title: data.title, description: data.description }
+      ]
+      this.trigger(NotificationStore.NotificationsKey)
+    }
   })
 
   sendTokenToServer = (currentToken: string) => {

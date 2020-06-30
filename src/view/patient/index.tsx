@@ -1,17 +1,17 @@
 import React, { FC, useState, useEffect } from 'react'
 import {
-  TextField, InputAdornment, Typography,
+  TextField, InputAdornment, Typography, CircularProgress,
   Card, CardContent, Grid, Dialog, DialogTitle,
   DialogContent, DialogContentText, DialogActions, Button, ButtonBase,
   useMediaQuery, useTheme, Checkbox, FormControl, FormControlLabel
 } from '@material-ui/core'
-import SearchIcon from '@material-ui/icons/Search'
 import { useHistory } from 'react-router-dom'
+import { withResubAutoSubscriptions } from 'resub'
+import { Search as SearchIcon } from '@material-ui/icons'
 
 import { AppContainer } from '../common'
-import { UserStore, Patient, HealthRecordStore } from '../../stores'
 import { maleAvatar, femaleAvatar } from '../../resources/images'
-import { withResubAutoSubscriptions } from 'resub'
+import { UserStore, Patient, HealthRecordStore, AccessPermissionStore } from '../../stores'
 
 interface PageProp {
 
@@ -23,27 +23,39 @@ const PatientPage: FC<PageProp> = () => {
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const patients = UserStore.getPatients()
   const isReady = UserStore.ready()
+  const isWaiting = AccessPermissionStore.getIsWaiting()
+  const respond = AccessPermissionStore.getRespond()
 
   const [ selectedPatient, setSelectedPatient ] = useState<Patient>()
   const [ filter, setFilter ] = useState('')
   const [ open, setOpen ] = useState(false)
-  const [ emergency, setEmergency ] = useState(false)
+  const [ isSending, setIsSending ] = useState(false)
 
   useEffect(() => {
     if (isReady) {
-      UserStore.fetchAllPatient()
+      UserStore.fetchAllPatients()
     }
 
     return UserStore.unsubscribe
   }, [ isReady ])
 
-  const requestAuthentication = () => {
-    setOpen(false)
-    if (selectedPatient) {
-      HealthRecordStore.setSelectedPatient(selectedPatient)
-      history.push('/patient/detail')
+  useEffect(() => {
+    if (isSending && selectedPatient && !isWaiting && respond) {
+      Promise.resolve(
+        HealthRecordStore.setSelectedPatient(selectedPatient)
+      ).then(() => {
+        AccessPermissionStore.setRespond()
+        setOpen(false)
+        history.push('/patient/detail')
+      })
     }
-  }
+  }, [ history, isSending, selectedPatient, isWaiting, respond ])
+
+  useEffect(() => {
+    if (!isWaiting && !respond) {
+      setIsSending(false)
+    }
+  }, [ isWaiting, respond ])
 
   return (
     <AppContainer isLoading={ isReady === false }>
@@ -65,34 +77,7 @@ const PatientPage: FC<PageProp> = () => {
       />
       {/* Patient Box */ }
       { PatientList(patients.filter(u => u.username.includes(filter))) }
-      <Dialog open={ open } onClose={ () => setOpen(false) } fullScreen={ fullScreen }>
-        <DialogTitle>Attention</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            { "To provide the patient's data from leakage, authentication is necessary from the patient. If you are confirmed to view this patient's data, click \"request\" to proceed. If the patient is under comma, please check the \"emergency\" option." }
-          </DialogContentText>
-          <FormControl>
-            <FormControlLabel
-              label='Emergency'
-              control={
-                <Checkbox
-                  checked={ emergency }
-                  color='primary'
-                  onChange={ event => setEmergency(event.target.checked) }
-                />
-              }
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={ () => setOpen(false) } color="primary">
-            Cancel
-          </Button>
-          <Button onClick={ requestAuthentication } color="primary">
-            Request
-          </Button>
-        </DialogActions>
-      </Dialog>
+      { AccessRequestDialog() }
     </AppContainer>
   )
 
@@ -133,6 +118,60 @@ const PatientPage: FC<PageProp> = () => {
         </ButtonBase>
       </Grid>
     )
+  }
+
+  function AccessRequestDialog() {
+    const [ emergency, setEmergency ] = useState(false)
+
+    const requestAuthentication = () => {
+      if (selectedPatient) {
+        setIsSending(true)
+        const target = emergency ? selectedPatient.authorizedUsers : [ selectedPatient.id ]
+        AccessPermissionStore.requestAccess(target)
+          .then(response => {
+            if (response.includes('Send Successfully') === false) {
+              setIsSending(false)
+            }
+          })
+      }
+    }
+
+    return <Dialog open={ open } onClose={ () => setOpen(false) } fullScreen={ fullScreen }>
+      <DialogTitle>{ 'Attention' }</DialogTitle>
+      <DialogContent>
+        {
+          isWaiting
+            ? <Grid container direction='column' justify='center' alignItems='center' style={ { height: '25vh', width: '40vw' } }>
+              <CircularProgress size={ 50 } />
+            </Grid>
+            : <>
+              <DialogContentText>
+                { "To provide the patient's data from leakage, authentication is necessary from the patient. If you are confirmed to view this patient's data, click \"request\" to proceed. If the patient is under comma, please check the \"emergency\" option." }
+              </DialogContentText>
+              <FormControl>
+                <FormControlLabel
+                  label='Emergency'
+                  control={
+                    <Checkbox
+                      checked={ emergency }
+                      color='primary'
+                      onChange={ event => setEmergency(event.target.checked) }
+                    />
+                  }
+                />
+              </FormControl>
+            </>
+        }
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={ () => setOpen(false) } color="primary">
+          Cancel
+      </Button>
+        <Button disabled={ isSending } onClick={ requestAuthentication } color="primary">
+          Request
+      </Button>
+      </DialogActions>
+    </Dialog>
   }
 }
 

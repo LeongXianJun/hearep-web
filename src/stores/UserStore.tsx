@@ -81,7 +81,7 @@ class UserStore extends StoreBase {
       }
     })
 
-  fetchAllPatient = () =>
+  fetchAllPatients = () =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch(CommonUtil.getURL() + '/patient/all', {
@@ -308,12 +308,14 @@ class Patient extends UR {
   type: 'Patient' = 'Patient'
   phoneNumber: string
   occupation: string
+  authorizedUsers: string[]
 
   constructor(input: any) {
     super({ ...input })
-    const { phoneNumber, occupation } = input
+    const { phoneNumber, occupation, authorizedUsers } = input
     this.phoneNumber = phoneNumber
     this.occupation = occupation
+    this.authorizedUsers = authorizedUsers as Array<any>
   }
 }
 

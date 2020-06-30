@@ -30,40 +30,38 @@ class HealthAnalysisStore extends StoreBase {
   fetchHealthAnalysis = (patientId: string) =>
     this.getToken().then(async userToken => {
       if (userToken) {
-        if (userToken) {
-          await fetch(CommonUtil.getURL() + '/analysis/patient', {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: qs.stringify({ userToken, date: new Date(), patientId })
-          }).then(response => {
-            if (response.ok) {
-              return response.json()
-            } else {
-              throw new Error(response.status + ': (' + response.statusText + ')')
+        await fetch(CommonUtil.getURL() + '/analysis/patient', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: qs.stringify({ userToken, date: new Date(), patientId })
+        }).then(response => {
+          if (response.ok) {
+            return response.json()
+          } else {
+            throw new Error(response.status + ': (' + response.statusText + ')')
+          }
+        }).then(data => {
+          if (data.errors) {
+            this.isReady = false
+            this.trigger([ HealthAnalysisStore.HCReadyKey ])
+            throw new Error(data.errors)
+          } else {
+            this.isReady = true
+            this.currentPatientId = patientId
+            this.healthCondition = {
+              'Sickness Frequency': data[ 'Sickness Frequency' ].map((d: any) => ({ month: new Date(d.month), count: d.count })),
+              'Blood Sugar Level': data[ 'Blood Sugar Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
+              'Blood Pressure Level': data[ 'Blood Pressure Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
+              'BMI': data[ 'BMI' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length }))
             }
-          }).then(data => {
-            if (data.errors) {
-              this.isReady = false
-              this.trigger([ HealthAnalysisStore.HCReadyKey ])
-              throw new Error(data.errors)
-            } else {
-              this.isReady = true
-              this.currentPatientId = patientId
-              this.healthCondition = {
-                'Sickness Frequency': data[ 'Sickness Frequency' ].map((d: any) => ({ month: new Date(d.month), count: d.count })),
-                'Blood Sugar Level': data[ 'Blood Sugar Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
-                'Blood Pressure Level': data[ 'Blood Pressure Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
-                'BMI': data[ 'BMI' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length }))
-              }
-              this.trigger([ HealthAnalysisStore.HealthConditionKey, HealthAnalysisStore.HCReadyKey ])
-            }
-          }).catch(err => Promise.reject(new Error('Fetch Analysis: ' + err.message)))
-        } else {
-          throw new Error('No Token Found')
-        }
+            this.trigger([ HealthAnalysisStore.HealthConditionKey, HealthAnalysisStore.HCReadyKey ])
+          }
+        }).catch(err => Promise.reject(new Error('Fetch Analysis: ' + err.message)))
+      } else {
+        throw new Error('No Token Found')
       }
     })
 
