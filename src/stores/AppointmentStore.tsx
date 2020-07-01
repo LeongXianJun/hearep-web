@@ -15,7 +15,6 @@ class AppointmentStore extends StoreBase {
   }
   selectedAppointment: Appointment | undefined
   patientAppointment: Appointment | undefined
-  isReady: boolean
 
   constructor() {
     super()
@@ -27,7 +26,6 @@ class AppointmentStore extends StoreBase {
       'Completed': [],
       'Cancelled': []
     }
-    this.isReady = false
   }
 
   private getToken = () => UserStore.getToken()
@@ -50,7 +48,6 @@ class AppointmentStore extends StoreBase {
             throw new Error(response.status + ': (' + response.statusText + ')')
           }
         }).then(data => {
-          this.isReady = true
           if (data.errors) {
             this.groupedAppointments = {
               'Pending': [],
@@ -60,7 +57,7 @@ class AppointmentStore extends StoreBase {
               'Completed': [],
               'Cancelled': []
             }
-            this.trigger([ AppointmentStore.GroupedAppointmentsKey, AppointmentStore.AReadyKey ])
+            this.trigger(AppointmentStore.GroupedAppointmentsKey)
             throw new Error(data.errors)
           } else {
             const createAppointment = (app: any) =>
@@ -75,7 +72,7 @@ class AppointmentStore extends StoreBase {
               'Completed': data[ 'Completed' ].map(createAppointment),
               'Cancelled': data[ 'Cancelled' ].map(createAppointment)
             }
-            this.trigger([ AppointmentStore.GroupedAppointmentsKey, AppointmentStore.AReadyKey ])
+            this.trigger(AppointmentStore.GroupedAppointmentsKey)
           }
         }).catch(err => Promise.reject(new Error('Fetch Health Records: ' + err.message)))
       } else {
@@ -174,12 +171,6 @@ class AppointmentStore extends StoreBase {
   @autoSubscribeWithKey('PatientAppointmentKey')
   getPatientAppointment() {
     return this.patientAppointment
-  }
-
-  static AReadyKey = 'AReadyKey'
-  @autoSubscribeWithKey('AReadyKey')
-  ready() {
-    return this.isReady
   }
 
   setSelectedAppointment(app: Appointment) {

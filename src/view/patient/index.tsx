@@ -30,14 +30,16 @@ const PatientPage: FC<PageProp> = () => {
   const [ filter, setFilter ] = useState('')
   const [ open, setOpen ] = useState(false)
   const [ isSending, setIsSending ] = useState(false)
+  const [ isLoading, setIsLoading ] = useState(true)
 
   useEffect(() => {
-    if (isReady) {
+    if (isReady && isLoading) {
       UserStore.fetchAllPatients()
+        .then(() => setIsLoading(false))
     }
 
     return UserStore.unsubscribe
-  }, [ isReady ])
+  }, [ isReady, isLoading ])
 
   useEffect(() => {
     if (isSending && selectedPatient && !isWaiting && respond) {
@@ -58,7 +60,7 @@ const PatientPage: FC<PageProp> = () => {
   }, [ isWaiting, respond ])
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Typography variant='h2' gutterBottom>{ 'Patient' }</Typography>
       {/* Search Bar */ }
       <TextField

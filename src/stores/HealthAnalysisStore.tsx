@@ -5,7 +5,6 @@ import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
 class HealthAnalysisStore extends StoreBase {
-  isReady: boolean
   currentPatientId: string
   healthCondition: {
     'Sickness Frequency': { month: Date, count: number }[],
@@ -15,7 +14,6 @@ class HealthAnalysisStore extends StoreBase {
   }
   constructor() {
     super()
-    this.isReady = false
     this.currentPatientId = ''
     this.healthCondition = {
       'Sickness Frequency': [],
@@ -45,11 +43,8 @@ class HealthAnalysisStore extends StoreBase {
           }
         }).then(data => {
           if (data.errors) {
-            this.isReady = false
-            this.trigger([ HealthAnalysisStore.HCReadyKey ])
             throw new Error(data.errors)
           } else {
-            this.isReady = true
             this.currentPatientId = patientId
             this.healthCondition = {
               'Sickness Frequency': data[ 'Sickness Frequency' ].map((d: any) => ({ month: new Date(d.month), count: d.count })),
@@ -57,7 +52,7 @@ class HealthAnalysisStore extends StoreBase {
               'Blood Pressure Level': data[ 'Blood Pressure Level' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length })),
               'BMI': data[ 'BMI' ].map((d: any) => ({ day: new Date(d.day), count: d.count, length: d.length }))
             }
-            this.trigger([ HealthAnalysisStore.HealthConditionKey, HealthAnalysisStore.HCReadyKey ])
+            this.trigger(HealthAnalysisStore.HealthConditionKey)
           }
         }).catch(err => Promise.reject(new Error('Fetch Analysis: ' + err.message)))
       } else {
@@ -69,12 +64,6 @@ class HealthAnalysisStore extends StoreBase {
   @autoSubscribeWithKey('HealthConditionKey')
   getHealthCondition() {
     return this.healthCondition
-  }
-
-  static HCReadyKey = 'HCReadyKey'
-  @autoSubscribeWithKey('HCReadyKey')
-  ready() {
-    return this.isReady
   }
 }
 

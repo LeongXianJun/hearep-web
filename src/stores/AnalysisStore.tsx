@@ -5,7 +5,6 @@ import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
 class AnalysisStore extends StoreBase {
-  isReady: boolean
   analysis: {
     NewApp: { day: Date, count: number }[],
     HandledApp: { day: Date, count: number }[],
@@ -13,7 +12,6 @@ class AnalysisStore extends StoreBase {
   }
   constructor() {
     super()
-    this.isReady = false
     this.analysis = {
       NewApp: [],
       HandledApp: [],
@@ -40,9 +38,7 @@ class AnalysisStore extends StoreBase {
             throw new Error(response.status + ': (' + response.statusText + ')')
           }
         }).then(data => {
-          this.isReady = true
           if (data.errors) {
-            this.trigger(AnalysisStore.AnaReadyKey)
             throw new Error(data.errors)
           } else {
             this.analysis = {
@@ -50,7 +46,7 @@ class AnalysisStore extends StoreBase {
               HandledApp: data[ 'HandledApp' ].map((d: any) => ({ day: new Date(d.day), count: d.count })),
               AverageWaitingTime: data[ 'AverageWaitingTime' ].map((d: any) => ({ day: new Date(d.day), averageTime: d.averageTime }))
             }
-            this.trigger([ AnalysisStore.AnalysisKey, AnalysisStore.AnaReadyKey ])
+            this.trigger(AnalysisStore.AnalysisKey)
           }
         }).catch(err => Promise.reject(new Error('Fetch Analysis: ' + err.message)))
       } else {
@@ -62,12 +58,6 @@ class AnalysisStore extends StoreBase {
   @autoSubscribeWithKey('AnalysisKey')
   getAnalysis() {
     return this.analysis
-  }
-
-  static AnaReadyKey = 'AnaReadyKey'
-  @autoSubscribeWithKey('AnaReadyKey')
-  ready() {
-    return this.isReady
   }
 }
 

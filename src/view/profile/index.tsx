@@ -20,8 +20,8 @@ const ProfilePage: FC<PageProp> = () => {
   const theme = useTheme()
   const user = UserStore.getUser()
   const isReady = UserStore.ready()
-  const isWTReady = WorkingTimeStore.ready()
   const TimeInterval = WorkingTimeStore.getTimeInterval()
+  const [ isLoading, setIsLoading ] = useState(true)
 
   const [ open, setOpen ] = useState(false)
 
@@ -30,13 +30,14 @@ const ProfilePage: FC<PageProp> = () => {
   }, [])
 
   useEffect(() => {
-    if (isReady && isWTReady === false && TimeInterval.length === 0) {
+    if (isReady && isLoading) {
       WorkingTimeStore.fetchTimeInterval()
+        .then(() => setIsLoading(false))
     }
-  }, [ isReady, isWTReady, TimeInterval ])
+  }, [ isReady, isLoading ])
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Grid container spacing={ 3 } justify='center'>
         <Grid item container direction='column' justify='center' alignContent='center' spacing={ 3 }>
           <Grid item>

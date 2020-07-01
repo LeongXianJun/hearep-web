@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { AppContainer, AppExpansion, LineGraphWithZoom } from './common'
 import {
   Grid, makeStyles, Theme, createStyles, CardContent,
@@ -28,29 +28,22 @@ const Dashboard: FC<PageProp> = () => {
   const styles = useStyles()
   const isReady = UserStore.ready()
   const patients = UserStore.getPatients()
-  const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
-  const isAnaReady = AnalysisStore.ready()
   const performanceAnalysis = AnalysisStore.getAnalysis()
   const { HandledApp, NewApp, AverageWaitingTime } = performanceAnalysis
 
-  useEffect(() => {
-    if (isReady && patients.length === 0)
-      UserStore.fetchAllPatients()
-        .catch(err => console.log(err))
-  }, [ isReady, patients ])
+  const [ isLoading, setIsLoading ] = useState(true)
 
   useEffect(() => {
-    if (isReady && isAppStoreReady === false)
-      AppointmentStore.fetchAllAppointments()
+    if (isReady && isLoading) {
+      Promise.all([
+        UserStore.fetchAllPatients(),
+        AppointmentStore.fetchAllAppointments(),
+        AnalysisStore.fetchPerformanceAnalysis()
+      ]).then(() => setIsLoading(false))
         .catch(err => console.log(err))
-  }, [ isReady, appointments, isAppStoreReady ])
-
-  useEffect(() => {
-    if (isReady)
-      AnalysisStore.fetchPerformanceAnalysis()
-        .catch(err => console.log(err))
-  }, [ isReady ])
+    }
+  }, [ isReady, isLoading ])
 
   const graphs: { title: string, graph: JSX.Element, defaultExpanded?: boolean }[] = [
     {
@@ -77,7 +70,7 @@ const Dashboard: FC<PageProp> = () => {
   ]
 
   return (
-    <AppContainer isLoading={ isReady === false || isAnaReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Grid container direction='row' justify='center' spacing={ 3 }>
         <Grid item xs={ 12 } sm={ 8 } lg={ 9 } style={ { width: '100%', height: '100%' } }>
           <Card>
@@ -95,26 +88,32 @@ const Dashboard: FC<PageProp> = () => {
             </CardContent>
           </Card>
         </Grid>
-        {
-          appointments[ 'Waiting' ].length > 0 || appointments[ 'Accepted' ].length > 0 //|| records[ 'healthPrescriptions' ].length > 0 || records[ 'labTestResults' ].length > 0
-            ? <Grid item xs={ 12 } sm={ 4 } lg={ 3 } style={ { width: '100%' } }>
-              { leftBar() }
-            </Grid>
-            : null
+        { <Grid item xs={ 12 } sm={ 4 } lg={ 3 } style={ { width: '100%' } }>
+          { leftBar() }
+        </Grid>
         }
       </Grid>
     </AppContainer>
   )
 
   function leftBar() {
+    const allApp = [ ...appointments[ 'Waiting' ], ...appointments[ 'Accepted' ] ]
     return (
       <Card>
         <CardHeader
           title='Notification'
         />
         <CardContent>
-          { notificationExp('Nearing Appointments', [ ...appointments[ 'Waiting' ], ...appointments[ 'Accepted' ] ]) }
-          {/* { notificationExp('Medication Refill Reminder', records[ 'healthPrescriptions' ].flatMap(hp => hp.medicationRecords)) } */ }
+          {
+            allApp.length > 0
+              ? notificationExp('Nearing Appointments', allApp)
+              : null
+          }
+          {
+            // records[ 'healthPrescriptions' ].length > 0 || records[ 'labTestResults' ].length > 0
+            //   ? notificationExp('Medication Refill Reminder', records[ 'healthPrescriptions' ].flatMap(hp => hp.medicationRecords))
+            //   : null
+          }
         </CardContent>
       </Card>
     )

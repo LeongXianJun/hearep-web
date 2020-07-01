@@ -18,23 +18,21 @@ interface PageProp {
 const AppointmentHistory: FC<PageProp> = () => {
   const isReady = UserStore.ready()
   const patients = UserStore.getPatients()
-  const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
   const { Completed, Cancelled } = appointments
 
-  useEffect(() => {
-    if (isReady && patients.length === 0)
-      UserStore.fetchAllPatients()
-        .catch(err => console.log(err))
-  }, [ isReady, patients ])
-
-  useEffect(() => {
-    if (isReady && isAppStoreReady === false)
-      AppointmentStore.fetchAllAppointments()
-        .catch(err => console.log(err))
-  }, [ isReady, isAppStoreReady ])
-
   const [ filter, setFilter ] = useState('')
+  const [ isLoading, setIsLoading ] = useState(true)
+
+  useEffect(() => {
+    if (isReady && isLoading) {
+      Promise.all([
+        UserStore.fetchAllPatients(),
+        AppointmentStore.fetchAllAppointments()
+      ]).then(() => setIsLoading(false))
+        .catch(err => console.log(err))
+    }
+  }, [ isReady, isLoading ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -43,7 +41,7 @@ const AppointmentHistory: FC<PageProp> = () => {
   ]
 
   return (
-    <AppContainer>
+    <AppContainer isLoading={ isLoading }>
       <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
         {
           breadcrumbs.map(({ path, text }, index, arr) => (

@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import {
   Grid, Card, CardHeader, CardContent, Breadcrumbs,
   Typography, Link, Table, TableBody, TableRow, TableCell
@@ -22,6 +22,8 @@ const LabTestPage: FC<PageProp> = () => {
   const patientAppointment = AppointmentStore.getPatientAppointment()
   const { Completed } = appointments
 
+  const [ isLoading, setIsLoading ] = useState(true)
+
   useEffect(() => {
     if (isReady) {
       if (patient === undefined) {
@@ -34,13 +36,18 @@ const LabTestPage: FC<PageProp> = () => {
   }, [ isReady, patient, record, history ])
 
   useEffect(() => {
-    if (isReady && record?.appId !== undefined && record.appId !== patientAppointment?.id) {
+    if (isReady && isLoading && record?.appId !== undefined && record.appId !== patientAppointment?.id) {
       const target = Completed.find(app => app.id === record.appId)
       if (target === undefined) {
         AppointmentStore.fetchPatientAppointment(record.appId)
+          .then(() => setIsLoading(false))
+      } else {
+        setIsLoading(false)
       }
+    } else {
+      setIsLoading(false)
     }
-  }, [ isReady, record, Completed, patientAppointment ])
+  }, [ isReady, isLoading, record, Completed, patientAppointment ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -50,7 +57,7 @@ const LabTestPage: FC<PageProp> = () => {
   ]
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
         {
           breadcrumbs.map(({ path, text }, index, arr) => (

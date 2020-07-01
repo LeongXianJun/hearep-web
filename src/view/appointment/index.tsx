@@ -24,37 +24,29 @@ const AppointmentPage: FC<PageProp> = () => {
   const fullScreen = useMediaQuery(theme.breakpoints.down('xs'))
   const isReady = UserStore.ready()
   const patients = UserStore.getPatients()
-  const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
-  const isWTReady = WorkingTimeStore.ready()
   const TimeInterval = WorkingTimeStore.getTimeInterval()
 
   const [ filter, setFilter ] = useState('')
   const [ timeslotOpen, setTimeslotOpen ] = useState(false)
+  const [ isLoading, setIsLoading ] = useState(true)
 
   useEffect(() => {
-    if (isReady && patients.length === 0)
-      UserStore.fetchAllPatients()
+    if (isReady && isLoading) {
+      Promise.all([
+        UserStore.fetchAllPatients(),
+        AppointmentStore.fetchAllAppointments(),
+        WorkingTimeStore.fetchTimeInterval()
+      ]).then(() => setIsLoading(false))
         .catch(err => console.log(err))
-  }, [ isReady, patients ])
-
-  useEffect(() => {
-    if (isReady && isAppStoreReady === false)
-      AppointmentStore.fetchAllAppointments()
-        .catch(err => console.log(err))
-  }, [ isReady, isAppStoreReady ])
-
-  useEffect(() => {
-    if (isReady && isWTReady === false && TimeInterval.length === 0)
-      WorkingTimeStore.fetchTimeInterval()
-        .catch(err => console.log(err))
-  }, [ isReady, isWTReady, TimeInterval ])
+    }
+  }, [ isReady, isLoading ])
 
   const updateStatus = (id: string, patientId: string, status: 'Accepted' | 'Rejected') => () =>
     AppointmentStore.updateStatus({ id, patientId, status })
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Grid container spacing={ 2 }>
         <Grid item xs={ 12 } sm={ 8 }>
           <Typography variant='h2'>{ 'Appointments' }</Typography>

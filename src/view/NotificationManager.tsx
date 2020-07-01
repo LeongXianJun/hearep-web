@@ -3,9 +3,9 @@ import {
   Card, CardActions, IconButton, Paper, Collapse,
   makeStyles, Typography
 } from '@material-ui/core'
-import { Close as CloseIcon, ExpandMore as ExpandMoreIcon } from '@material-ui/icons'
-import { withResubAutoSubscriptions } from 'resub'
 import { useSnackbar } from 'notistack'
+import { withResubAutoSubscriptions } from 'resub'
+import { Close as CloseIcon, ExpandMore as ExpandMoreIcon } from '@material-ui/icons'
 
 import { NotificationStore } from '../stores'
 

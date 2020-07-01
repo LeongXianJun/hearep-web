@@ -34,6 +34,7 @@ const PrescriptionPage: FC<PageProp> = () => {
   const { Completed } = appointments
 
   const [ open, setOpen ] = useState(false)
+  const [ isLoading, setIsLoading ] = useState(true)
 
   useEffect(() => {
     if (isReady) {
@@ -47,13 +48,18 @@ const PrescriptionPage: FC<PageProp> = () => {
   }, [ isReady, patient, record, history ])
 
   useEffect(() => {
-    if (isReady && record?.appId !== undefined && record.appId !== patientAppointment?.id) {
+    if (isReady && isLoading && record?.appId !== undefined && record.appId !== patientAppointment?.id) {
       const target = Completed.find(app => app.id === record.appId)
       if (target === undefined) {
         AppointmentStore.fetchPatientAppointment(record.appId)
+          .then(() => setIsLoading(false))
+      } else {
+        setIsLoading(false)
       }
+    } else {
+      setIsLoading(false)
     }
-  }, [ isReady, record, Completed, patientAppointment ])
+  }, [ isReady, isLoading, record, Completed, patientAppointment ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -63,7 +69,7 @@ const PrescriptionPage: FC<PageProp> = () => {
   ]
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
         {
           breadcrumbs.map(({ path, text }, index, arr) => (

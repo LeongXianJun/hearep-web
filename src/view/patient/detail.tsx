@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { AppContainer, AppExpansion, LineGraph } from '../common'
 import {
   Grid, Breadcrumbs, Link, Typography, TableBody,
@@ -22,12 +22,12 @@ const PatientDetailPage: FC<PageProp> = () => {
   const isReady = UserStore.ready()
   const patient = HealthRecordStore.getSelectedPatient()
   const healthRecords = HealthRecordStore.getHealthRecords()
-  const isAppStoreReady = AppointmentStore.ready()
   const appointments = AppointmentStore.getGroupedAppointments()
-  const isHCReady = HealthAnalysisStore.ready()
   const healthConditions = HealthAnalysisStore.getHealthCondition()
   const { healthPrescriptions, labTestResults } = healthRecords
   const Accepted = appointments.Accepted.filter(app => app.patientId === patient?.id)
+
+  const [ isLoading, setIsLoading ] = useState(true)
 
   useEffect(() => {
     if (isReady && patient === undefined) {
@@ -36,23 +36,19 @@ const PatientDetailPage: FC<PageProp> = () => {
   }, [ patient, isReady, history ])
 
   useEffect(() => {
-    if (isReady && patient) {
+    if (isReady && isLoading && patient) {
       Promise.all([
         HealthRecordStore.fetchPatientRecords(patient.id),
-        HealthAnalysisStore.fetchHealthAnalysis(patient.id)
-      ]).catch(err => {
-        if (err.message.includes('No more record') === false) {
-          console.error(err)
-        }
-      })
+        HealthAnalysisStore.fetchHealthAnalysis(patient.id),
+        AppointmentStore.fetchAllAppointments()
+      ]).then(() => setIsLoading(false))
+        .catch(err => {
+          if (err.message.includes('No more record') === false) {
+            console.error(err)
+          }
+        })
     }
-  }, [ isReady, patient ])
-
-  useEffect(() => {
-    if (isReady && isAppStoreReady === false)
-      AppointmentStore.fetchAllAppointments()
-        .catch(err => console.log(err))
-  }, [ isReady, isAppStoreReady ])
+  }, [ isReady, isLoading, patient ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -85,7 +81,7 @@ const PatientDetailPage: FC<PageProp> = () => {
     )
 
   return (
-    <AppContainer isLoading={ isReady === false }>
+    <AppContainer isLoading={ isLoading }>
       <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
         {
           breadcrumbs.map(({ path, text }, index, arr) => (
@@ -212,7 +208,7 @@ const PatientDetailPage: FC<PageProp> = () => {
               </TableBody>
             </Table>
           </AppExpansion>
-          <AppExpansion title='Health Analysis' isLoading={ isHCReady === false }>
+          <AppExpansion title='Health Analysis' isLoading={ isLoading }>
             {
               [
                 {
