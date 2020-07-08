@@ -32,7 +32,7 @@ const ProfilePage: FC<PageProp> = () => {
   useEffect(() => {
     if (isReady && isLoading) {
       WorkingTimeStore.fetchTimeInterval()
-        .then(() => setIsLoading(false))
+        .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
 

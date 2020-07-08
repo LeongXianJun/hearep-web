@@ -4,7 +4,7 @@ import {
   Grid, useMediaQuery, Divider, IconButton,
   useTheme, Table, TableBody, TableRow, TableCell,
   TableHead, Breadcrumbs, Typography, Link, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormHelperText
 } from '@material-ui/core'
 import DateFnsUtils from '@date-io/date-fns'
 import {
@@ -13,7 +13,7 @@ import {
 } from '@material-ui/pickers'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
-import { Add as AddIcon, Delete as DeleteIcon } from '@material-ui/icons'
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@material-ui/icons'
 
 import {
   UserStore, HealthRecordStore, HealthPrescription, MedicationRecord, AppointmentStore
@@ -33,8 +33,19 @@ const PrescriptionPage: FC<PageProp> = () => {
   const patientAppointment = AppointmentStore.getPatientAppointment()
   const { Completed } = appointments
 
-  const [ open, setOpen ] = useState(false)
+  const [ addOpen, setAddOpen ] = useState(false)
+  const [ selectedMR, setSelectedMR ] = useState<MedicationRecord>()
   const [ isLoading, setIsLoading ] = useState(true)
+
+  const [ refillDate, setRefillDate ] = useState(new Date())
+  const [ medicines, setMedicines ] = useState<{ medicine: string, dosage: number, usage: string }[]>([])
+
+  useEffect(() => {
+    if (selectedMR) {
+      setRefillDate(selectedMR.refillDate)
+      setMedicines(selectedMR.medications)
+    }
+  }, [ selectedMR ])
 
   useEffect(() => {
     if (isReady) {
@@ -52,7 +63,7 @@ const PrescriptionPage: FC<PageProp> = () => {
       const target = Completed.find(app => app.id === record.appId)
       if (target === undefined) {
         AppointmentStore.fetchPatientAppointment(record.appId)
-          .then(() => setIsLoading(false))
+          .finally(() => setIsLoading(false))
       } else {
         setIsLoading(false)
       }
@@ -88,6 +99,7 @@ const PrescriptionPage: FC<PageProp> = () => {
               <AppExpansion
                 title='Prescription Information'
                 defaultExpanded
+                actions={ <Button size="small" onClick={ () => history.push('/prescription/update') }><EditIcon />Edit</Button> }
               >
                 { PrescriptionInfo(record) }
               </AppExpansion>
@@ -101,7 +113,7 @@ const PrescriptionPage: FC<PageProp> = () => {
               <AppExpansion
                 title='Medication Records'
                 defaultExpanded
-                actions={ <Button size="small" onClick={ () => setOpen(true) }>Add</Button> }
+                actions={ <Button size="small" onClick={ () => setAddOpen(true) }>Add</Button> }
               >
                 <Grid container direction='column' spacing={ 1 }>
                   {
@@ -116,6 +128,7 @@ const PrescriptionPage: FC<PageProp> = () => {
           : <></>
       }
       { AddMedicationRecordDialog() }
+      { UpdateMedicationRecordDialog() }
     </AppContainer>
   )
 
@@ -178,6 +191,7 @@ const PrescriptionPage: FC<PageProp> = () => {
         <AppExpansion
           title={ 'Medication Record on ' + mr.date.toDateString() }
           subtitle={ 'Refill on ' + mr.refillDate.toDateString() }
+          actions={ <Button size="small" onClick={ () => setSelectedMR(mr) }><EditIcon />Edit</Button> }
         >
           <Table>
             <TableHead>
@@ -205,47 +219,52 @@ const PrescriptionPage: FC<PageProp> = () => {
   }
 
   function AddMedicationRecordDialog() {
-    const [ refillDate, setRefillDate ] = useState(new Date())
-    const [ medicines, setMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
+    const [ newRefillDate, setNewRefillDate ] = useState(new Date())
+    const [ newMedicines, setNewMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
+    const [ error, setError ] = useState('')
+
     const addMedicine = () => {
-      setMedicines([ ...medicines, { medicine: '', dosage: 0, usage: '' } ])
+      setNewMedicines([ ...newMedicines, { medicine: '', dosage: 0, usage: '' } ])
     }
 
     const removeMedicine = (num: number) => {
-      setMedicines([ ...medicines.slice(0, num), ...medicines.slice(num + 1) ])
+      setNewMedicines([ ...newMedicines.slice(0, num), ...newMedicines.slice(num + 1) ])
     }
 
     const updateMedicine = (num: number, val: string) => {
-      setMedicines([ ...medicines.slice(0, num), { ...medicines[ num ], 'medicine': val }, ...medicines.slice(num + 1) ])
+      setNewMedicines([ ...newMedicines.slice(0, num), { ...newMedicines[ num ], 'medicine': val }, ...newMedicines.slice(num + 1) ])
     }
 
     const updateDosage = (num: number, val: number) => {
-      setMedicines([ ...medicines.slice(0, num), { ...medicines[ num ], 'dosage': val }, ...medicines.slice(num + 1) ])
+      setNewMedicines([ ...newMedicines.slice(0, num), { ...newMedicines[ num ], 'dosage': val }, ...newMedicines.slice(num + 1) ])
     }
 
     const updateUsage = (num: number, val: string) => {
-      setMedicines([ ...medicines.slice(0, num), { ...medicines[ num ], 'usage': val }, ...medicines.slice(num + 1) ])
+      setNewMedicines([ ...newMedicines.slice(0, num), { ...newMedicines[ num ], 'usage': val }, ...newMedicines.slice(num + 1) ])
     }
 
     const cancel = () => {
-      setOpen(false)
-      setMedicines([ { medicine: '', dosage: 0, usage: '' } ])
+      setAddOpen(false)
+      setNewMedicines([ { medicine: '', dosage: 0, usage: '' } ])
     }
 
     const addMedicationRecord = () => {
       if (patient && record) {
+        const validMedicines = newMedicines.filter(m => m.medicine !== '' && m.dosage !== undefined && m.usage !== '')
         HealthRecordStore.insertHealthRecord({
           type: 'Medication Record', prescriptionId: record.id,
-          date: new Date(), patientId: patient?.id, refillDate,
-          medications: medicines
-        }).then(() => {
-          setOpen(false)
-        })
+          date: new Date(), patientId: patient?.id, refillDate: newRefillDate,
+          medications: validMedicines
+        }).then(() => setAddOpen(false))
+          .catch(err => {
+            if (err.message.includes('medications" is required'))
+              setError('The record cannot remain empty')
+          })
       }
     }
 
     return (
-      <Dialog open={ open } onClose={ cancel } fullScreen={ fullScreen } maxWidth='md'>
+      <Dialog open={ addOpen } onClose={ cancel } fullScreen={ fullScreen } maxWidth='md'>
         <DialogTitle>
           <Grid container direction='row'>
             <Grid item xs={ 8 }>
@@ -260,8 +279,8 @@ const PrescriptionPage: FC<PageProp> = () => {
                   size='small'
                   margin="normal"
                   label='Refill Date'
-                  value={ refillDate }
-                  onChange={ date => date && setRefillDate(date) }
+                  value={ newRefillDate }
+                  onChange={ date => date && setNewRefillDate(date) }
                   KeyboardButtonProps={ {
                     'aria-label': 'change date',
                   } }
@@ -274,7 +293,7 @@ const PrescriptionPage: FC<PageProp> = () => {
         <DialogContent>
           <Grid container direction='column'>
             {
-              medicines.map((medicine, index) =>
+              newMedicines.map((medicine, index) =>
                 <Grid key={ 'medicine-' + index } style={ { marginBottom: 5 } } item container direction='row' spacing={ 1 } xs={ 12 }>
                   <Grid item container direction='row' spacing={ 1 } xs={ 10 }>
                     <Grid item xs={ 12 } sm={ 4 }>
@@ -321,6 +340,10 @@ const PrescriptionPage: FC<PageProp> = () => {
         </DialogContent>
         <Divider />
         <DialogActions>
+          { error !== ''
+            ? <FormHelperText error style={ { flex: 1 } }>{ error }</FormHelperText>
+            : null
+          }
           <Button onClick={ cancel } color="primary">
             Cancel
           </Button>
@@ -330,6 +353,149 @@ const PrescriptionPage: FC<PageProp> = () => {
           </Button>
           <Button onClick={ addMedicationRecord } color="primary">
             Add Medication Record
+          </Button>
+        </DialogActions>
+      </Dialog>
+    )
+  }
+
+  function UpdateMedicationRecordDialog() {
+    const [ error, setError ] = useState('')
+
+    const addMedicine = () => {
+      setMedicines([ ...medicines, { medicine: '', dosage: 0, usage: '' } ])
+    }
+
+    const removeMedicine = (num: number) => {
+      setMedicines([ ...medicines.slice(0, num), ...medicines.slice(num + 1) ])
+    }
+
+    const updateMedicine = (num: number, val: string) => {
+      setMedicines([ ...medicines.slice(0, num), { ...medicines[ num ], 'medicine': val }, ...medicines.slice(num + 1) ])
+    }
+
+    const updateDosage = (num: number, val: number) => {
+      setMedicines([ ...medicines.slice(0, num), { ...medicines[ num ], 'dosage': val }, ...medicines.slice(num + 1) ])
+    }
+
+    const updateUsage = (num: number, val: string) => {
+      setMedicines([ ...medicines.slice(0, num), { ...medicines[ num ], 'usage': val }, ...medicines.slice(num + 1) ])
+    }
+
+    const cancel = () => {
+      setSelectedMR(undefined)
+    }
+
+    const updateMedicationRecord = () => {
+      if (selectedMR && patient && record) {
+        const validMedicines = medicines.filter(m => m.medicine !== '' && m.dosage !== undefined && m.usage !== '')
+        HealthRecordStore.updateHealthRecord({
+          id: selectedMR.id, type: 'Medication Record',
+          patientId: patient?.id, refillDate, medications: validMedicines
+        }, selectedMR.prescriptionId)
+          .then(() => setSelectedMR(undefined))
+          .catch(err => {
+            if (err.message.includes('medications" is required'))
+              setError('The record cannot remain empty')
+            else
+              setError(err.message)
+          })
+      }
+    }
+
+    return (
+      <Dialog open={ selectedMR !== undefined } onClose={ cancel } fullScreen={ fullScreen } maxWidth='md'>
+        <DialogTitle>
+          <Grid container direction='row'>
+            <Grid item xs={ 8 }>
+              <Typography variant='h4'>{ 'New Medication Record' }</Typography>
+            </Grid>
+            <Grid item xs={ 4 }>
+              <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                <KeyboardDatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  size='small'
+                  margin="normal"
+                  label='Refill Date'
+                  value={ refillDate }
+                  onChange={ date => date && setRefillDate(date) }
+                  KeyboardButtonProps={ {
+                    'aria-label': 'change date',
+                  } }
+                />
+              </MuiPickersUtilsProvider>
+            </Grid>
+          </Grid>
+        </DialogTitle>
+        <Divider />
+        <DialogContent>
+          <Grid container direction='column'>
+            {
+              medicines.map((medicine, index) =>
+                <Grid key={ 'medicine-' + index } style={ { marginBottom: 5 } } item container direction='row' spacing={ 1 } xs={ 12 }>
+                  <Grid item container direction='row' spacing={ 1 } xs={ 10 }>
+                    <Grid item xs={ 12 } sm={ 4 }>
+                      <TextField
+                        required
+                        variant="outlined"
+                        placeholder="Enter the Medicine"
+                        fullWidth
+                        value={ medicine.medicine }
+                        label={ "Medicine " + (index + 1) }
+                        onChange={ event => updateMedicine(index, event.target.value) }
+                      />
+                    </Grid>
+                    <Grid item xs={ 6 } sm={ 4 }>
+                      <TextField
+                        required
+                        variant="outlined"
+                        type="number"
+                        placeholder="Enter the Dosage"
+                        fullWidth
+                        value={ medicine.dosage }
+                        label={ "Dosage " + (index + 1) }
+                        onChange={ event => updateDosage(index, Number(event.target.value)) }
+                      />
+                    </Grid>
+                    <Grid item xs={ 6 } sm={ 4 }>
+                      <TextField
+                        required
+                        variant="outlined"
+                        placeholder="Enter the Usage"
+                        fullWidth
+                        value={ medicine.usage }
+                        label={ "Usage " + (index + 1) }
+                        onChange={ event => updateUsage(index, event.target.value) }
+                      />
+                    </Grid>
+                  </Grid>
+                  <Grid item container xs alignContent='center' justify='flex-end'>
+                    <IconButton onClick={ () => removeMedicine(index) }>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              )
+            }
+          </Grid>
+        </DialogContent>
+        <Divider />
+        <DialogActions>
+          { error !== ''
+            ? <FormHelperText error style={ { flex: 1 } }>{ error }</FormHelperText>
+            : null
+          }
+          <Button onClick={ cancel } color="primary">
+            Cancel
+          </Button>
+          <Button onClick={ addMedicine } color="primary">
+            <AddIcon />
+            Add Medicine
+          </Button>
+          <Button onClick={ updateMedicationRecord } color="primary">
+            Update Medication Record
           </Button>
         </DialogActions>
       </Dialog>

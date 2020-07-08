@@ -41,12 +41,9 @@ const PatientDetailPage: FC<PageProp> = () => {
         HealthRecordStore.fetchPatientRecords(patient.id),
         HealthAnalysisStore.fetchHealthAnalysis(patient.id),
         AppointmentStore.fetchAllAppointments()
-      ]).then(() => setIsLoading(false))
-        .catch(err => {
-          if (err.message.includes('No more record') === false) {
-            console.error(err)
-          }
-        })
+      ]).catch(err => {
+        console.log(err)
+      }).finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading, patient ])
 

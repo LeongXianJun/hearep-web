@@ -28,12 +28,12 @@ class NotificationStore extends StoreBase {
   })
 
   unsubscribeOnMessage = navigator.serviceWorker.addEventListener('message', payload => {
-    const { data: { 'firebase-messaging-msg-data': { data } } } = payload
+    const { data: { 'firebaseMessaging': { payload: { data } } } } = payload
     if (data.status) {
       if (data.status === 'Permitted') {
-        AccessPermissionStore.setIsWaiting(false, true)
+        AccessPermissionStore.setIsWaiting(false, 'accepted')
       } else {
-        AccessPermissionStore.setIsWaiting(false, false)
+        AccessPermissionStore.setIsWaiting(false, 'rejected')
       }
     } else {
       this.notification = [

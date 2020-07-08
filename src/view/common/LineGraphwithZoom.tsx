@@ -38,7 +38,7 @@ const LineGraphWithZoom: FC<ComponentProps> = ({ data, color = 'tomato', minZoom
           minDomain={ { y: 0 } }
           scale={ { x: data[ 0 ]?.x instanceof Date ? "time" : 'linear' } }
           padding={ { top: 40, left: 40, right: 40, bottom: 30 } }
-          domainPadding={ { x: 5, y: 5 } }
+          domainPadding={ { x: 20, y: 5 } }
           containerComponent={
             <VictoryZoomVoronoiContainer
               zoomDimension='x'
@@ -77,7 +77,7 @@ const LineGraphWithZoom: FC<ComponentProps> = ({ data, color = 'tomato', minZoom
           minDomain={ { y: 0 } }
           scale={ { x: data[ 0 ]?.x instanceof Date ? "time" : 'linear' } }
           padding={ { top: 0, left: 40, right: 40, bottom: 30 } }
-          domainPadding={ { x: 5, y: 5 } }
+          domainPadding={ { x: 20, y: 5 } }
           containerComponent={
             <VictoryBrushContainer
               brushDimension="x"

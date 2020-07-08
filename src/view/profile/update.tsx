@@ -3,8 +3,13 @@ import {
   Typography, Grid, DialogTitle, TextField, makeStyles,
   Theme, createStyles, Button, RadioGroup, FormControlLabel,
   Radio, FormControl, InputLabel, Select, MenuItem,
-  DialogContent, Dialog, DialogActions, useTheme, useMediaQuery
+  DialogContent, Dialog, DialogActions, useTheme, useMediaQuery, FormHelperText
 } from '@material-ui/core'
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker
+} from '@material-ui/pickers'
+import DateFnsUtils from '@date-io/date-fns'
 import { withResubAutoSubscriptions } from 'resub'
 
 import { UserStore } from '../../stores'
@@ -40,17 +45,9 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const CurrentUser = UserStore.getUser()
 
-  useEffect(() => {
-    if (CurrentUser) {
-      setInfo({ ...CurrentUser, dob: CurrentUser.dob.toDateString() })
-    }
-
-    return UserStore.unsubscribe
-  }, [ CurrentUser ])
-
   const [ info, setInfo ] = useState({
     username: '',
-    dob: '',
+    dob: new Date(),
     gender: 'M' as 'M' | 'F',
     medicalInstituition: {
       role: '',
@@ -59,12 +56,66 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
       department: '',
     }
   })
+  const [ isSubmitting, setIsSubmitting ] = useState(false)
+  const [ err, setErr ] = useState({
+    'username': '',
+    'name': '',
+    'address': '',
+    'department': ''
+  })
+
+  const updateInfo = (field: 'username' | 'name' | 'address' | 'department', value: string) => {
+    if (field !== 'username') {
+      setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, [ field ]: value } })
+    } else {
+      setInfo({ ...info, [ field ]: value })
+    }
+    setErr({ ...err, [ field ]: '' })
+  }
+
+  useEffect(() => {
+    if (CurrentUser) {
+      setInfo({ ...CurrentUser })
+    }
+
+    return UserStore.unsubscribe
+  }, [ CurrentUser ])
 
   const { username, dob, gender, medicalInstituition: { role, name, address, department } } = info
 
   const submit = () =>
-    UserStore.updateProfile({ ...CurrentUser, ...info })
+    UserStore.updateProfile({ username, dob, gender, medicalInstituition: { name, role, address, department } })
       .then(() => onClose())
+      .catch(err => {
+        const errors: string[] = err.message.split('"user.')
+        setErr(
+          errors.reduce<{
+            'username': string
+            'name': string
+            'address': string
+            'department': string
+          }>((all, e) => {
+            if (e.includes('username')) {
+              return { ...all, 'username': e.replace('"', '') }
+            } else if (e.includes('medicalInstituition.name')) {
+              return { ...all, 'name': e.replace('"', '') }
+            } else if (e.includes('medicalInstituition.address')) {
+              return { ...all, 'address': e.replace('"', '') }
+            } else if (e.includes('medicalInstituition.department')) {
+              return { ...all, 'department': e.replace('"', '') }
+            } else
+              return all
+          }, {
+            'username': '',
+            'name': '',
+            'address': '',
+            'department': ''
+          })
+        )
+      })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
 
   return (
     <React.Fragment>
@@ -88,19 +139,29 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 placeholder="Enter your Fullname"
                 label="Fullname"
                 fullWidth
+                error={ err[ 'username' ] !== '' }
                 value={ username }
-                onChange={ event => setInfo({ ...info, username: event.target.value }) }
+                onChange={ event => updateInfo('username', event.target.value) }
               />
-              <TextField
-                required
-                variant="outlined"
-                className={ styles.input }
-                placeholder="Enter your Birth Date"
-                label="Date"
-                fullWidth
-                value={ dob }
-                onChange={ event => setInfo({ ...info, dob: event.target.value }) }
-              />
+              { err[ 'username' ] !== ''
+                ? <FormHelperText error>{ err[ 'username' ] }</FormHelperText>
+                : null
+              }
+              <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                <KeyboardDatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  margin="normal"
+                  label='Birth Date'
+                  value={ dob }
+                  fullWidth
+                  onChange={ date => date && setInfo({ ...info, dob: date }) }
+                  KeyboardButtonProps={ {
+                    'aria-label': 'change date',
+                  } }
+                />
+              </MuiPickersUtilsProvider>
               <FormControl fullWidth className={ styles.input }>
                 <Typography variant='subtitle1' align='left'>{ 'Gender' }</Typography>
                 <RadioGroup row aria-label="gender" name="gender" value={ gender } onChange={ event => setInfo({ ...info, gender: event.target.value as 'M' | 'F' }) }>
@@ -118,8 +179,13 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 label="Medical Institution"
                 fullWidth
                 value={ name }
-                onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, name: event.target.value } }) }
+                error={ err[ 'name' ] !== '' }
+                onChange={ event => updateInfo('name', event.target.value) }
               />
+              { err[ 'name' ] !== ''
+                ? <FormHelperText error>{ err[ 'name' ] }</FormHelperText>
+                : null
+              }
               <FormControl variant="outlined" fullWidth className={ styles.input }>
                 <InputLabel>Role</InputLabel>
                 <Select
@@ -141,8 +207,13 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 rows={ 3 }
                 rowsMax={ 3 }
                 value={ address }
-                onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, address: event.target.value } }) }
+                error={ err[ 'address' ] !== '' }
+                onChange={ event => updateInfo('address', event.target.value) }
               />
+              { err[ 'address' ] !== ''
+                ? <FormHelperText error>{ err[ 'address' ] }</FormHelperText>
+                : null
+              }
               <TextField
                 variant="outlined"
                 className={ styles.input }
@@ -150,14 +221,19 @@ const ProfileUpdatePage: FC<PageProp> = ({ open, onClose }) => {
                 label="Department"
                 fullWidth
                 value={ department }
-                onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, department: event.target.value } }) }
+                error={ err[ 'department' ] !== '' }
+                onChange={ event => updateInfo('department', event.target.value) }
               />
+              { err[ 'department' ] !== ''
+                ? <FormHelperText error>{ err[ 'department' ] }</FormHelperText>
+                : null
+              }
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
           <Button variant='contained' onClick={ () => onClose() }>Close</Button>
-          <Button variant='contained' onClick={ submit } color='primary'>Update Info</Button>
+          <Button variant='contained' disabled={ isSubmitting } onClick={ submit } color='primary'>Update Info</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>

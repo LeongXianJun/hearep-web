@@ -38,7 +38,6 @@ const NotificationManager: FC<ManagerProps> = ({ children }) => {
 
 export default withResubAutoSubscriptions(NotificationManager)
 
-
 const useStyles = makeStyles(theme => ({
   card: {
     display: 'flex',

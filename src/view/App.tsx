@@ -10,10 +10,12 @@ const AppointmentHistoryPage = loadable(() => import('./appointment/history'))
 const AppointmentPage = loadable(() => import('./appointment/index'))
 const Dashboard = loadable(() => import('./Dashboard'))
 const AddLabTestPage = loadable(() => import('./labTest/add'))
+const UpdateLabTestPage = loadable(() => import('./labTest/update'))
 const LabTestPage = loadable(() => import('./labTest/index'))
 const PatientDetailPage = loadable(() => import('./patient/detail'))
 const PatientPage = loadable(() => import('./patient/index'))
 const AddPrescriptionPage = loadable(() => import('./prescription/add'))
+const UpdatePrescriptionPage = loadable(() => import('./prescription/update'))
 const PrescriptionPage = loadable(() => import('./prescription/index'))
 const ProfilePage = loadable(() => import('./profile/index'))
 const MissingPage = loadable(() => import('./MissingPage'))
@@ -24,10 +26,12 @@ const routes: RoutePair[] = [
   { path: '/appointment/history', page: <AppointmentHistoryPage /> },
   { path: '/appointment', page: <AppointmentPage /> },
   { path: '/dashboard', page: <Dashboard /> },
+  { path: '/labTest/update', page: <UpdateLabTestPage /> },
   { path: '/labTest/add', page: <AddLabTestPage /> },
   { path: '/labTest', page: <LabTestPage /> },
   { path: '/patient/detail', page: <PatientDetailPage /> },
   { path: '/patient', page: <PatientPage /> },
+  { path: '/prescription/update', page: <UpdatePrescriptionPage /> },
   { path: '/prescription/add', page: <AddPrescriptionPage /> },
   { path: '/prescription', page: <PrescriptionPage /> },
   { path: '/profile', page: <ProfilePage /> },

@@ -1,7 +1,7 @@
 import React, { FC, useState } from 'react'
 import {
   Box, Container, TextField, Button,
-  Grid, Tabs, Tab, useTheme, Paper
+  Grid, Tabs, Tab, useTheme, Paper, FormHelperText
 } from '@material-ui/core'
 import SwipeableViews from 'react-swipeable-views'
 import { useHistory } from 'react-router-dom'
@@ -86,18 +86,30 @@ const AuthorizationPage: FC<PageProp> = () => {
   )
 
   function Login() {
-    const [ email, setEmail ] = React.useState('')
-    const [ password, setPassword ] = React.useState('')
+    const [ info, setInfo ] = useState({
+      email: '',
+      password: ''
+    })
     const [ isSubmitting, setIsSubmitting ] = useState(false)
+
+    const [ error, setError ] = useState('')
+
+    const updateInfo = (field: 'email' | 'password', value: string) => {
+      setInfo({ ...info, [ field ]: value })
+      if (error !== '')
+        setError('')
+    }
 
     const submit = () => {
       setIsSubmitting(true)
-      AuthUtil.signIn(email, password)
+      AuthUtil.signIn(info.email, info.password)
         .then(() => {
-          setIsSubmitting(false)
           history.replace('/dashboard')
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+          setError(err.message)
+        })
+        .finally(() => setIsSubmitting(false))
     }
 
     return (
@@ -108,7 +120,7 @@ const AuthorizationPage: FC<PageProp> = () => {
             placeholder="Enter your Email"
             label="Email Address"
             fullWidth
-            onChange={ event => setEmail(event.target.value) }
+            onChange={ event => updateInfo('email', event.target.value) }
           />
         </Grid>
         <Grid item>
@@ -118,9 +130,15 @@ const AuthorizationPage: FC<PageProp> = () => {
             placeholder="Enter your Password"
             label="Password"
             fullWidth
-            onChange={ event => setPassword(event.target.value) }
+            onChange={ event => updateInfo('password', event.target.value) }
           />
         </Grid>
+        { error !== ''
+          ? <Grid item style={ { width: 200 } }>
+            <FormHelperText error>{ error }</FormHelperText>
+          </Grid>
+          : null
+        }
         <Grid item>
           <Button variant='contained' style={ { margin: 15 } } disabled={ isSubmitting } onClick={ submit } color={ 'primary' }>Login</Button>
         </Grid>
@@ -136,25 +154,34 @@ const AuthorizationPage: FC<PageProp> = () => {
     })
     const [ isSubmitting, setIsSubmitting ] = useState(false)
 
+    const [ error, setError ] = useState('')
+
+    const updateInfo = (field: 'email' | 'password' | 'confirm', value: string) => {
+      setInfo({ ...info, [ field ]: value })
+      if (error !== '')
+        setError('')
+    }
+
     const { email, password, confirm } = info
 
     const register = () => new Promise<boolean>((resolve, reject) => {
       // password regex checking
       resolve(password === confirm)
-    }).then(result => {
+    }).then(async result => {
       if (result) {
         setIsSubmitting(true)
-        AuthUtil.register(email, password)
+        await AuthUtil.register(email, password)
           .then(() => {
             setIsSubmitting(false)
             history.replace('/register')
           })
-          .catch(err => console.log(err))
+          .catch(err => Promise.reject(err))
       } else {
         throw new Error('Password is not matched')
       }
-    })
-      .catch(err => console.log(err.message))
+    }).catch(err => {
+      setError(err.message)
+    }).finally(() => setIsSubmitting(false))
 
     return (
       <Grid container spacing={ 1 } direction='column' justify='center' alignItems='center'>
@@ -164,7 +191,7 @@ const AuthorizationPage: FC<PageProp> = () => {
             placeholder="Enter your Email"
             label="Email Address"
             fullWidth
-            onChange={ event => setInfo({ ...info, email: event.target.value }) }
+            onChange={ event => updateInfo('email', event.target.value) }
           />
         </Grid>
         <Grid item>
@@ -174,7 +201,7 @@ const AuthorizationPage: FC<PageProp> = () => {
             placeholder="Enter your Password"
             label="Password"
             fullWidth
-            onChange={ event => setInfo({ ...info, password: event.target.value }) }
+            onChange={ event => updateInfo('password', event.target.value) }
           />
         </Grid>
         <Grid item>
@@ -184,9 +211,15 @@ const AuthorizationPage: FC<PageProp> = () => {
             placeholder="Enter your Password again"
             label="Confirm"
             fullWidth
-            onChange={ event => setInfo({ ...info, confirm: event.target.value }) }
+            onChange={ event => updateInfo('confirm', event.target.value) }
           />
         </Grid>
+        { error !== ''
+          ? <Grid item style={ { width: 200 } }>
+            <FormHelperText error>{ error }</FormHelperText>
+          </Grid>
+          : null
+        }
         <Grid item>
           <Button variant='contained' style={ { margin: 15 } } disabled={ isSubmitting } onClick={ register } color={ 'primary' }>{ 'Continue' }</Button>
         </Grid>

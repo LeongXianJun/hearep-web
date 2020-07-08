@@ -1,31 +1,18 @@
 import React, { FC, useEffect, useState } from 'react'
 import { AppContainer, AppExpansion, LineGraphWithZoom } from './common'
 import {
-  Grid, makeStyles, Theme, createStyles, CardContent,
-  Card, CardHeader, Table, TableBody, TableRow, TableCell
+  Grid, CardContent, Card, CardHeader, Table,
+  TableBody, TableRow, TableCell, Typography
 } from '@material-ui/core'
 import { withResubAutoSubscriptions } from 'resub'
 
-import { NumGraph, TimeGraph } from '../resources/images'
 import { UserStore, MedicationRecord, AppointmentStore, Appointment, AnalysisStore } from '../stores'
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    img: {
-      margin: 'auto',
-      display: 'block',
-      maxWidth: '100%',
-      maxHeight: '100%',
-    }
-  }),
-)
 
 interface PageProp {
 
 }
 
 const Dashboard: FC<PageProp> = () => {
-  const styles = useStyles()
   const isReady = UserStore.ready()
   const patients = UserStore.getPatients()
   const appointments = AppointmentStore.getGroupedAppointments()
@@ -40,8 +27,8 @@ const Dashboard: FC<PageProp> = () => {
         UserStore.fetchAllPatients(),
         AppointmentStore.fetchAllAppointments(),
         AnalysisStore.fetchPerformanceAnalysis()
-      ]).then(() => setIsLoading(false))
-        .catch(err => console.log(err))
+      ]).catch(err => console.log(err))
+        .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
 
@@ -56,17 +43,9 @@ const Dashboard: FC<PageProp> = () => {
       graph: <LineGraphWithZoom data={ NewApp.map(a => ({ x: a.day, y: a.count })) } minZoom={ 2 } showSymbol yLabel='Count' />
     },
     {
-      title: 'Average Consultation Time per day',
-      graph: <img className={ styles.img } alt='time' src={ TimeGraph } />
-    }, // currently no way to get this
-    {
       title: 'Average Waiting Time per day',
       graph: <LineGraphWithZoom data={ AverageWaitingTime.map(a => ({ x: a.day, y: a.averageTime })) } minZoom={ 2 } showSymbol yLabel='Average Time' />
-    },
-    {
-      title: 'Overall Patient Satisfaction per day',
-      graph: <img className={ styles.img } alt='num' src={ NumGraph } />
-    } // currently no way to get this (require patient to rate the doctor)
+    }
   ]
 
   return (
@@ -107,12 +86,7 @@ const Dashboard: FC<PageProp> = () => {
           {
             allApp.length > 0
               ? notificationExp('Nearing Appointments', allApp)
-              : null
-          }
-          {
-            // records[ 'healthPrescriptions' ].length > 0 || records[ 'labTestResults' ].length > 0
-            //   ? notificationExp('Medication Refill Reminder', records[ 'healthPrescriptions' ].flatMap(hp => hp.medicationRecords))
-            //   : null
+              : <Typography>{ 'No new notification' }</Typography>
           }
         </CardContent>
       </Card>

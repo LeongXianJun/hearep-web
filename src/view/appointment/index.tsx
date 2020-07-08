@@ -37,8 +37,8 @@ const AppointmentPage: FC<PageProp> = () => {
         UserStore.fetchAllPatients(),
         AppointmentStore.fetchAllAppointments(),
         WorkingTimeStore.fetchTimeInterval()
-      ]).then(() => setIsLoading(false))
-        .catch(err => console.log(err))
+      ]).catch(err => console.log(err))
+        .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
 

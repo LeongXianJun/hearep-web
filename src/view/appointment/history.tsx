@@ -19,7 +19,7 @@ const AppointmentHistory: FC<PageProp> = () => {
   const isReady = UserStore.ready()
   const patients = UserStore.getPatients()
   const appointments = AppointmentStore.getGroupedAppointments()
-  const { Completed, Cancelled } = appointments
+  const allApp = [ ...appointments.Completed, ...appointments.Cancelled ]
 
   const [ filter, setFilter ] = useState('')
   const [ isLoading, setIsLoading ] = useState(true)
@@ -29,8 +29,8 @@ const AppointmentHistory: FC<PageProp> = () => {
       Promise.all([
         UserStore.fetchAllPatients(),
         AppointmentStore.fetchAllAppointments()
-      ]).then(() => setIsLoading(false))
-        .catch(err => console.log(err))
+      ]).catch(err => console.log(err))
+        .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
 
@@ -81,7 +81,7 @@ const AppointmentHistory: FC<PageProp> = () => {
         />
         <CardContent>
           {
-            [ ...Completed, ...Cancelled ].length > 0
+            allApp.length > 0
               ? <Table>
                 <TableHead>
                   <TableRow>
@@ -93,7 +93,7 @@ const AppointmentHistory: FC<PageProp> = () => {
                 </TableHead>
                 <TableBody>
                   {
-                    [ ...Completed, ...Cancelled ].map(a => ({ ...a, patient: patients.find(p => p.id === a.patientId) }))
+                    allApp.map(a => ({ ...a, patient: patients.find(p => p.id === a.patientId) }))
                       .filter(a => a.patient?.username.includes(filter))
                       .sort((a, b) => a.date.getTime() - b.date.getTime())
                       .map((appointment, index) =>

@@ -2,25 +2,24 @@ import React, { FC, useState, useEffect } from 'react'
 import {
   Grid, IconButton, Card, CardHeader, CardContent,
   CardActions, Breadcrumbs, Typography, Link, Button,
-  TextField, Table, TableBody, TableRow, TableCell, FormHelperText
+  TextField, FormHelperText
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
-import { Add as AddIcon, Create as CreateIcon, Delete as DeleteIcon } from '@material-ui/icons'
+import { Add as AddIcon, Delete as DeleteIcon, Update as UpdateIcon } from '@material-ui/icons'
 
-import { AppContainer, AppExpansion } from '../common'
-import { UserStore, HealthRecordStore, AppointmentStore, Appointment } from '../../stores'
+import { AppContainer } from '../common'
+import { UserStore, HealthRecordStore } from '../../stores'
 
 interface PageProp {
 
 }
 
-const AddLabTestPage: FC<PageProp> = () => {
+const UpdateLabTestPage: FC<PageProp> = () => {
   const history = useHistory()
   const isReady = UserStore.ready()
+  const record = HealthRecordStore.getSelectedLTRRecord()
   const patient = HealthRecordStore.getSelectedPatient()
-  const appointment = AppointmentStore.getSelectedAppointment()
-  const date = new Date()
 
   const [ info, setInfo ] = useState({
     title: '',
@@ -39,6 +38,13 @@ const AddLabTestPage: FC<PageProp> = () => {
   }
 
   useEffect(() => {
+    if (record) {
+      setInfo({ title: record.title, comment: record.comment })
+      setData(record.data)
+    }
+  }, [ record ])
+
+  useEffect(() => {
     if (isReady && patient === undefined) {
       history.replace('/patient')
     }
@@ -48,18 +54,27 @@ const AddLabTestPage: FC<PageProp> = () => {
     { path: '/dashboard', text: 'Home' },
     { path: '/patient', text: 'Patient' },
     { path: '/patient/detail', text: patient?.username },
-    { path: undefined, text: 'Add new Lab Test Result' }
+    { path: '/labTest', text: 'Lab Test on ' + record?.date.toDateString() },
+    { path: undefined, text: 'Update Lab Test Result' }
   ]
 
   const submit = () => {
-    if (patient) {
+    if (record) {
       const { title, comment } = info
-      HealthRecordStore.insertHealthRecord({
-        type: 'Lab Test Result', appId: appointment?.id.toString(), patientId: patient.id,
-        date, title, comment, data: data.filter(d => d.field !== '')
+      const validData = data.reduce<typeof data>((all, d) => {
+        if (d.field !== '') {
+          return [ ...all, { field: d.field, normalRange: d.normalRange, value: d.value } ]
+        } else {
+          return all
+        }
+      }, [])
+      HealthRecordStore.updateHealthRecord({
+        type: 'Lab Test Result', id: record.id, patientId: record.patientId,
+        title, comment, data: validData
       }).then(() => {
         history.goBack()
       }).catch(err => {
+        console.log(err)
         const errors: string[] = err.message.split('"healthRecord.')
         setErrors(
           errors.reduce<{
@@ -97,7 +112,6 @@ const AddLabTestPage: FC<PageProp> = () => {
       <Grid container direction='row' justify='center' spacing={ 3 } style={ { marginTop: 5 } }>
         <Grid item xs={ 12 } md={ 4 }>
           { LabTestDetail() }
-          { appointment ? AppointmentDetail(appointment) : undefined }
         </Grid>
         <Grid item xs={ 12 } md={ 8 }>
           { LabTestResult() }
@@ -125,7 +139,7 @@ const AddLabTestPage: FC<PageProp> = () => {
               <TextField
                 variant='outlined'
                 disabled
-                value={ date.toDateString() }
+                value={ record?.date.toDateString() }
                 label="Date"
                 fullWidth
               />
@@ -137,6 +151,7 @@ const AddLabTestPage: FC<PageProp> = () => {
                 placeholder="Enter the main illness"
                 label="Title"
                 fullWidth
+                value={ info.title }
                 error={ errors.title !== '' }
                 onChange={ event => updateInfo('title', event.target.value) }
               />
@@ -155,6 +170,7 @@ const AddLabTestPage: FC<PageProp> = () => {
                 multiline
                 rows={ 3 }
                 rowsMax={ 5 }
+                value={ info.comment }
                 error={ errors.comment !== '' }
                 onChange={ event => updateInfo('comment', event.target.value) }
               />
@@ -166,45 +182,11 @@ const AddLabTestPage: FC<PageProp> = () => {
           </Grid>
         </CardContent>
         <CardActions>
-          <Button onClick={ submit } startIcon={ <CreateIcon /> } color="primary" size='small'>
-            Add new Lab Test Result
+          <Button onClick={ submit } startIcon={ <UpdateIcon /> } color="primary" size='small'>
+            Update Lab Test Result
           </Button>
         </CardActions>
       </Card>
-    )
-  }
-
-  function AppointmentDetail(app: Appointment) {
-    const details = [
-      { field: 'Address', val: app.address },
-      ...app.type === 'byTime'
-        ? [
-          { field: 'Date', val: app.time.toDateString() },
-          { field: 'Time', val: app.time.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }) }
-        ]
-        : app.type === 'byNumber'
-          ? [
-            { field: 'Date', val: app.date.toDateString() },
-            { field: 'Turn', val: app.turn + 1 }
-          ]
-          : []
-    ].filter(({ val }) => val !== undefined && val !== '')
-
-    return (
-      <AppExpansion title={ 'Appointment Detail' }>
-        <Table>
-          <TableBody>
-            {
-              details.map(({ field, val }, index) =>
-                <TableRow hover key={ 'arow-' + index }>
-                  <TableCell>{ field }</TableCell>
-                  <TableCell>{ val }</TableCell>
-                </TableRow>
-              )
-            }
-          </TableBody>
-        </Table>
-      </AppExpansion>
     )
   }
 
@@ -243,6 +225,7 @@ const AddLabTestPage: FC<PageProp> = () => {
                         variant="outlined"
                         placeholder="Enter Test Component"
                         fullWidth
+                        value={ row.field }
                         label={ "Test Component " + (index + 1) }
                         onChange={ event => updateRow(index, 'field', event.target.value) }
                       />
@@ -253,6 +236,7 @@ const AddLabTestPage: FC<PageProp> = () => {
                         variant="outlined"
                         placeholder="Enter the Result"
                         fullWidth
+                        value={ row.value }
                         label={ "Result " + (index + 1) }
                         onChange={ event => updateRow(index, 'value', event.target.value) }
                       />
@@ -263,6 +247,7 @@ const AddLabTestPage: FC<PageProp> = () => {
                         variant="outlined"
                         placeholder="Enter the Normal Range"
                         fullWidth
+                        value={ row.normalRange }
                         label={ "Normal Range " + (index + 1) }
                         onChange={ event => updateRow(index, 'normalRange', event.target.value) }
                       />
@@ -283,4 +268,4 @@ const AddLabTestPage: FC<PageProp> = () => {
   }
 }
 
-export default withResubAutoSubscriptions(AddLabTestPage)
+export default withResubAutoSubscriptions(UpdateLabTestPage)

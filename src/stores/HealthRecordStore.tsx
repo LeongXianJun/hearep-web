@@ -89,7 +89,7 @@ class HealthRecordStore extends StoreBase {
       }
     })
 
-  updateHealthRecord = ({ type, ...input }: { id: string, patientId: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', prescriptionId: string, refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] })) =>
+  updateHealthRecord = (input: { id: string, patientId: string } & ({ type: 'Health Prescription', illness: string, clinicalOpinion: string } | { type: 'Medication Record', refillDate: Date, medications: Medication[] } | { type: 'Lab Test Result', title: string, comment: string, data: LabTestField[] }), prescriptionId?: string) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch(CommonUtil.getURL() + '/healthrecords/update', {
@@ -113,6 +113,49 @@ class HealthRecordStore extends StoreBase {
         }).then(result => {
           if (result.errors) {
             throw new Error(result.errors)
+          } else {
+            if (input.type === 'Health Prescription') {
+              this.healthPrescriptions = this.healthPrescriptions.map(hp => {
+                if (hp.id === input.id) {
+                  const latestHP = new HealthPrescription({ ...hp, ...input })
+                  this.selectedRecord = latestHP
+                  return latestHP
+                } else {
+                  return hp
+                }
+              })
+            } else if (input.type === 'Medication Record') {
+              this.healthPrescriptions = this.healthPrescriptions.map(hp => {
+                console.log(hp)
+                if (hp.id === prescriptionId) {
+                  const latestHP = {
+                    ...hp, medicationRecords: hp.medicationRecords.map(mr => {
+                      console.log('mr', mr)
+                      if (mr.id === input.id) {
+                        return new MedicationRecord({ ...mr, ...input })
+                      } else {
+                        return mr
+                      }
+                    })
+                  }
+                  this.selectedRecord = latestHP
+                  return latestHP
+                } else {
+                  return hp
+                }
+              })
+            } else if (input.type === 'Lab Test Result') {
+              this.labTestResults = this.labTestResults.map(ltr => {
+                if (ltr.id === input.id) {
+                  const latestLTR = new LabTestResult({ ...ltr, ...input })
+                  this.selectedRecord = latestLTR
+                  return latestLTR
+                } else {
+                  return ltr
+                }
+              })
+            }
+            this.trigger([ HealthRecordStore.HRKey, HealthRecordStore.SelectedRecordKey ])
           }
         })
           .catch(err => Promise.reject(new Error(err.message)))

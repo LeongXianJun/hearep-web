@@ -110,7 +110,7 @@ class UserStore extends StoreBase {
       }
     })
 
-  createUser = (info: { username: string, dob: string, gender: 'M' | 'F', medicalInstituition: MedicalInstituition }) =>
+  createUser = (info: { username: string, dob: Date, gender: 'M' | 'F', medicalInstituition: MedicalInstituition }) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch(CommonUtil.getURL() + '/user/create', {
@@ -144,7 +144,7 @@ class UserStore extends StoreBase {
       }
     })
 
-  updateProfile = (latest: { username: string, dob: string, gender: 'M' | 'F', medicalInstituition: MedicalInstituition }) =>
+  updateProfile = (latest: { username: string, dob: Date, gender: 'M' | 'F', medicalInstituition: MedicalInstituition }) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         await fetch(CommonUtil.getURL() + '/user/update', {

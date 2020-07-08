@@ -3,16 +3,16 @@ import { AppContainer, AppExpansion } from '../common'
 import {
   Grid, IconButton, Card, CardHeader, CardContent,
   CardActions, Breadcrumbs, Typography, Link, Button,
-  TextField, Table, TableBody, TableRow, TableCell
+  TextField, Table, TableBody, TableRow, TableCell, FormHelperText
 } from '@material-ui/core'
 import DateFnsUtils from '@date-io/date-fns'
+import { useHistory } from 'react-router-dom'
+import { withResubAutoSubscriptions } from 'resub'
 import {
   MuiPickersUtilsProvider,
   KeyboardDatePicker
 } from '@material-ui/pickers'
 import { Add as AddIcon, Create as CreateIcon, Delete as DeleteIcon } from '@material-ui/icons'
-import { useHistory } from 'react-router-dom'
-import { withResubAutoSubscriptions } from 'resub'
 
 import { UserStore, HealthRecordStore, AppointmentStore, Appointment } from '../../stores'
 
@@ -27,10 +27,23 @@ const AddPrescriptionPage: FC<PageProp> = () => {
   const appointment = AppointmentStore.getSelectedAppointment()
   const date = new Date()
 
-  const [ illness, setIllness ] = useState('')
-  const [ clinicalOpinion, setClinicalOpinion ] = useState('')
+  const [ prescriptionInfo, setPI ] = useState({
+    illness: '',
+    clinicalOpinion: ''
+  })
   const [ refillDate, setRefillDate ] = useState(new Date())
   const [ medicines, setMedicines ] = useState([ { medicine: '', dosage: 0, usage: '' } ])
+
+  const [ piErrors, setPIErrors ] = useState({
+    illness: '',
+    clinicalOpinion: ''
+  })
+
+  const updatePI = (field: 'illness' | 'clinicalOpinion', value: string) => {
+    setPI({ ...prescriptionInfo, [ field ]: value })
+    if (piErrors[ field ] !== '')
+      setPIErrors({ ...piErrors, [ field ]: '' })
+  }
 
   useEffect(() => {
     if (isReady && patient === undefined) {
@@ -47,6 +60,7 @@ const AddPrescriptionPage: FC<PageProp> = () => {
 
   const submit = () => {
     if (patient) {
+      const { illness, clinicalOpinion } = prescriptionInfo
       HealthRecordStore.insertHealthRecord({
         type: 'Health Prescription', patientId: patient.id,
         date, appId: appointment?.id, illness, clinicalOpinion
@@ -55,8 +69,9 @@ const AddPrescriptionPage: FC<PageProp> = () => {
           if (hr instanceof Error) {
             console.error(hr)
           } else {
-            if (appointment)
+            if (appointment) {
               AppointmentStore.upApp(appointment, appointment.status, 'Completed')
+            }
             const validMedicines = medicines.filter(m => m.medicine !== '' && m.dosage !== undefined && m.usage !== '')
             if (validMedicines.length > 0) {
               await HealthRecordStore.insertHealthRecord({
@@ -68,6 +83,24 @@ const AddPrescriptionPage: FC<PageProp> = () => {
         }
       }).then(() => {
         history.goBack()
+      }).catch(err => {
+        const errors: string[] = err.message.split('"healthRecord.')
+        setPIErrors(
+          errors.reduce<{
+            illness: string,
+            clinicalOpinion: string
+          }>((all, e) => {
+            if (e.includes('illness')) {
+              return { ...all, 'illness': e.replace('"', '') }
+            } else if (e.includes('clinicalOpinion')) {
+              return { ...all, 'clinicalOpinion': e.replace('"', '') }
+            } else
+              return all
+          }, {
+            illness: '',
+            clinicalOpinion: ''
+          })
+        )
       })
     }
   }
@@ -128,8 +161,13 @@ const AddPrescriptionPage: FC<PageProp> = () => {
                 placeholder="Enter the main illness"
                 label="Illness"
                 fullWidth
-                onChange={ event => setIllness(event.target.value) }
+                error={ piErrors.illness !== '' }
+                onChange={ event => updatePI('illness', event.target.value) }
               />
+              { piErrors.illness !== ''
+                ? <FormHelperText error>{ piErrors.illness }</FormHelperText>
+                : null
+              }
             </Grid>
             <Grid item xs={ 12 }>
               <TextField
@@ -141,8 +179,13 @@ const AddPrescriptionPage: FC<PageProp> = () => {
                 multiline
                 rows={ 3 }
                 rowsMax={ 5 }
-                onChange={ event => setClinicalOpinion(event.target.value) }
+                error={ piErrors.clinicalOpinion !== '' }
+                onChange={ event => updatePI('clinicalOpinion', event.target.value) }
               />
+              { piErrors.clinicalOpinion !== ''
+                ? <FormHelperText error>{ piErrors.clinicalOpinion }</FormHelperText>
+                : null
+              }
             </Grid>
           </Grid>
         </CardContent>

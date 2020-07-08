@@ -5,16 +5,16 @@ import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 @AutoSubscribeStore
 class AccessPermissionStore extends StoreBase {
   isWaiting: boolean
-  respond: boolean
+  respond: 'pending' | 'accepted' | 'rejected'
   constructor() {
     super()
     this.isWaiting = false
-    this.respond = false
+    this.respond = 'pending'
   }
 
   private getToken = () => UserStore.getToken()
 
-  requestAccess = (patientIds: string[]) =>
+  requestAccess = (patientId: string, isEmergency: boolean, userIds: string[]) =>
     this.getToken().then(async userToken => {
       if (userToken) {
         return await fetch('http://localhost:8001/access/request', {
@@ -23,7 +23,7 @@ class AccessPermissionStore extends StoreBase {
             Accept: 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded'
           },
-          body: qs.stringify({ userToken, patientIds })
+          body: qs.stringify({ userToken, patientId, isEmergency, userIds })
         }).then(response => {
           if (response.ok) {
             return response.json()
@@ -35,7 +35,7 @@ class AccessPermissionStore extends StoreBase {
             throw new Error(data.errors)
           } else {
             if (data.response.includes('Send Successfully')) {
-              this.setIsWaiting(true, false)
+              this.setIsWaiting(true, 'pending')
               return data.response
             } else {
               throw new Error('Weird Error')
@@ -60,11 +60,11 @@ class AccessPermissionStore extends StoreBase {
   }
 
   setRespond() {
-    this.respond = false
+    this.respond = 'pending'
     this.trigger(AccessPermissionStore.respondKey)
   }
 
-  setIsWaiting(isWaiting: boolean, respond: boolean) {
+  setIsWaiting(isWaiting: boolean, respond: 'pending' | 'accepted' | 'rejected') {
     this.isWaiting = isWaiting
     this.respond = respond
     this.trigger([ AccessPermissionStore.isWaitingKey, AccessPermissionStore.respondKey ])

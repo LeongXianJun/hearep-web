@@ -3,7 +3,7 @@ import {
   TextField, InputAdornment, Typography, CircularProgress,
   Card, CardContent, Grid, Dialog, DialogTitle,
   DialogContent, DialogContentText, DialogActions, Button, ButtonBase,
-  useMediaQuery, useTheme, Checkbox, FormControl, FormControlLabel
+  useMediaQuery, useTheme, Checkbox, FormControl, FormControlLabel, FormHelperText
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
@@ -31,27 +31,33 @@ const PatientPage: FC<PageProp> = () => {
   const [ open, setOpen ] = useState(false)
   const [ isSending, setIsSending ] = useState(false)
   const [ isLoading, setIsLoading ] = useState(true)
+  const [ accessError, setAccessError ] = useState('')
 
   useEffect(() => {
     if (isReady && isLoading) {
       UserStore.fetchAllPatients()
-        .then(() => setIsLoading(false))
+        .finally(() => setIsLoading(false))
     }
 
     return UserStore.unsubscribe
   }, [ isReady, isLoading ])
 
   useEffect(() => {
-    if (isSending && selectedPatient && !isWaiting && respond) {
-      Promise.resolve(
-        HealthRecordStore.setSelectedPatient(selectedPatient)
-      ).then(() => {
-        AccessPermissionStore.setRespond()
-        setOpen(false)
-        history.push('/patient/detail')
-      })
+    if (selectedPatient && !isWaiting) {
+      if (respond === 'accepted') {
+        Promise.resolve(
+          HealthRecordStore.setSelectedPatient(selectedPatient)
+        ).then(() => {
+          AccessPermissionStore.setRespond()
+          setOpen(false)
+          history.push('/patient/detail')
+        })
+      } else if (respond === 'rejected') {
+        setAccessError('Your requested is rejected.')
+        setIsSending(false)
+      }
     }
-  }, [ history, isSending, selectedPatient, isWaiting, respond ])
+  }, [ history, selectedPatient, isWaiting, respond ])
 
   useEffect(() => {
     if (!isWaiting && !respond) {
@@ -127,18 +133,29 @@ const PatientPage: FC<PageProp> = () => {
 
     const requestAuthentication = () => {
       if (selectedPatient) {
-        setIsSending(true)
-        const target = emergency ? selectedPatient.authorizedUsers : [ selectedPatient.id ]
-        AccessPermissionStore.requestAccess(target)
-          .then(response => {
-            if (response.includes('Send Successfully') === false) {
-              setIsSending(false)
-            }
-          })
+        Promise.resolve(
+          HealthRecordStore.setSelectedPatient(selectedPatient)
+        ).then(() => {
+          AccessPermissionStore.setRespond()
+          setOpen(false)
+          history.push('/patient/detail')
+        })
+        // setIsSending(true)
+        // Promise.all([
+        //   AccessPermissionStore.setRespond(),
+        //   AccessPermissionStore.requestAccess(selectedPatient.id, emergency, selectedPatient.authorizedUsers)
+        // ]).catch(err => {
+        //   if (err.message.includes('did not set his/her authorized user')) {
+        //     setAccessError('No authorized user to permit the access.')
+        //   } else {
+        //     console.log(err)
+        //   }
+        //   setIsSending(false)
+        // })
       }
     }
 
-    return <Dialog open={ open } onClose={ () => setOpen(false) } fullScreen={ fullScreen }>
+    return <Dialog open={ open } onClose={ () => isWaiting === false ? setOpen(false) : null } fullScreen={ fullScreen }>
       <DialogTitle>{ 'Attention' }</DialogTitle>
       <DialogContent>
         {
@@ -150,6 +167,10 @@ const PatientPage: FC<PageProp> = () => {
               <DialogContentText>
                 { "To provide the patient's data from leakage, authentication is necessary from the patient. If you are confirmed to view this patient's data, click \"request\" to proceed. If the patient is under comma, please check the \"emergency\" option." }
               </DialogContentText>
+              { accessError !== ''
+                ? <FormHelperText error>{ accessError }</FormHelperText>
+                : null
+              }
               <FormControl>
                 <FormControlLabel
                   label='Emergency'
@@ -166,7 +187,7 @@ const PatientPage: FC<PageProp> = () => {
         }
       </DialogContent>
       <DialogActions>
-        <Button onClick={ () => setOpen(false) } color="primary">
+        <Button disabled={ isSending } onClick={ () => setOpen(false) } color="primary">
           Cancel
       </Button>
         <Button disabled={ isSending } onClick={ requestAuthentication } color="primary">

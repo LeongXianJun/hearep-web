@@ -1,9 +1,15 @@
 import React, { FC, useState } from 'react'
 import {
   Container, TextField, Button, Grid, Typography,
-  FormControl, RadioGroup, FormControlLabel, Radio, InputLabel,
-  Select, MenuItem, makeStyles, Theme, createStyles
+  FormControl, RadioGroup, FormControlLabel, Radio,
+  InputLabel, Select, MenuItem, makeStyles, Theme,
+  createStyles, FormHelperText
 } from '@material-ui/core'
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker
+} from '@material-ui/pickers'
+import DateFnsUtils from '@date-io/date-fns'
 import { useHistory } from 'react-router-dom'
 
 import './index.css'
@@ -39,7 +45,7 @@ const RegisterInfoPage: FC<PageProp> = () => {
 
   const [ info, setInfo ] = useState({
     username: '',
-    dob: '',
+    dob: new Date(),
     gender: 'M' as 'M' | 'F',
     medicalInstituition: {
       role: '',
@@ -49,6 +55,23 @@ const RegisterInfoPage: FC<PageProp> = () => {
     }
   })
   const [ isSubmitting, setIsSubmitting ] = useState(false)
+  const [ errors, setErrors ] = useState({
+    username: '',
+    name: '',
+    address: '',
+    department: '',
+  })
+
+  const updateInfo = (field: 'username' | 'name' | 'address' | 'department', value: string) => {
+    if (field !== 'username') {
+      setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, [ field ]: value } })
+    } else {
+      setInfo({ ...info, [ field ]: value })
+    }
+    if (errors[ field ] !== '')
+      setErrors({ ...errors, [ field ]: '' })
+  }
+
 
   const { gender, medicalInstituition: { role } } = info
 
@@ -59,8 +82,36 @@ const RegisterInfoPage: FC<PageProp> = () => {
         setIsSubmitting(false)
         UserStore.setRegister(false)
         history.replace('dashboard')
+      }).catch(err => {
+        const errors: string[] = err.message.split('"user.')
+        setErrors(
+          errors.reduce<{
+            'username': string
+            'name': string
+            'address': string
+            'department': string
+          }>((all, e) => {
+            if (e.includes('username')) {
+              return { ...all, 'username': e.replace('"', '') }
+            } else if (e.includes('medicalInstituition.name')) {
+              return { ...all, 'name': e.replace('"', '') }
+            } else if (e.includes('medicalInstituition.address')) {
+              return { ...all, 'address': e.replace('"', '') }
+            } else if (e.includes('medicalInstituition.department')) {
+              return { ...all, 'department': e.replace('"', '') }
+            } else
+              return all
+          }, {
+            'username': '',
+            'name': '',
+            'address': '',
+            'department': ''
+          })
+        )
       })
-      .catch(err => console.error((err)))
+      .finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   return (
@@ -77,17 +128,28 @@ const RegisterInfoPage: FC<PageProp> = () => {
                 placeholder="Enter your Fullname"
                 label="Fullname"
                 fullWidth
-                onChange={ event => setInfo({ ...info, username: event.target.value }) }
+                error={ errors.username !== '' }
+                onChange={ event => updateInfo('username', event.target.value) }
               />
-              <TextField
-                required
-                variant="outlined"
-                className={ styles.input }
-                placeholder="1999-01-16"
-                label="Birth Date"
-                fullWidth
-                onChange={ event => setInfo({ ...info, dob: event.target.value }) }
-              />
+              { errors.username !== ''
+                ? <FormHelperText error>{ errors.username }</FormHelperText>
+                : null
+              }
+              <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                <KeyboardDatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  margin="normal"
+                  label='Birth Date'
+                  value={ info.dob }
+                  fullWidth
+                  onChange={ date => date && setInfo({ ...info, dob: date }) }
+                  KeyboardButtonProps={ {
+                    'aria-label': 'change date',
+                  } }
+                />
+              </MuiPickersUtilsProvider>
               <FormControl fullWidth className={ styles.input }>
                 <Typography variant='subtitle1' align='left'>{ 'Gender' }</Typography>
                 <RadioGroup row aria-label="gender" name="gender" value={ gender } onChange={ event => setInfo({ ...info, gender: event.target.value as 'M' | 'F' }) }>
@@ -104,8 +166,13 @@ const RegisterInfoPage: FC<PageProp> = () => {
                 placeholder="Enter your Medical Institution"
                 label="Medical Institution"
                 fullWidth
-                onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, name: event.target.value } }) }
+                error={ errors.name !== '' }
+                onChange={ event => updateInfo('name', event.target.value) }
               />
+              { errors.name !== ''
+                ? <FormHelperText error>{ errors.name }</FormHelperText>
+                : null
+              }
               <FormControl variant="outlined" fullWidth className={ styles.input }>
                 <InputLabel>{ 'Role' }</InputLabel>
                 <Select
@@ -126,16 +193,26 @@ const RegisterInfoPage: FC<PageProp> = () => {
                 multiline
                 rows={ 3 }
                 rowsMax={ 3 }
-                onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, address: event.target.value } }) }
+                error={ errors.address !== '' }
+                onChange={ event => updateInfo('address', event.target.value) }
               />
+              { errors.address !== ''
+                ? <FormHelperText error>{ errors.address }</FormHelperText>
+                : null
+              }
               <TextField
                 variant="outlined"
                 className={ styles.input }
                 placeholder="Enter your Department"
                 label="Department"
                 fullWidth
-                onChange={ event => setInfo({ ...info, medicalInstituition: { ...info.medicalInstituition, department: event.target.value } }) }
+                error={ errors.department !== '' }
+                onChange={ event => updateInfo('department', event.target.value) }
               />
+              { errors.department !== ''
+                ? <FormHelperText error>{ errors.department }</FormHelperText>
+                : null
+              }
             </Grid>
           </Grid>
           <Grid item style={ { marginTop: 10, marginBottom: 10 } }>

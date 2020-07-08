@@ -1,10 +1,12 @@
 import React, { FC, useEffect, useState } from 'react'
 import {
   Grid, Card, CardHeader, CardContent, Breadcrumbs,
-  Typography, Link, Table, TableBody, TableRow, TableCell
+  Typography, Link, Table, TableBody, TableRow, TableCell,
+  CardActions, Button
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
+import { Edit as EditIcon } from '@material-ui/icons'
 
 import { AppContainer, AppExpansion, AppTable } from '../common'
 import { UserStore, HealthRecordStore, LabTestResult, AppointmentStore } from '../../stores'
@@ -40,7 +42,7 @@ const LabTestPage: FC<PageProp> = () => {
       const target = Completed.find(app => app.id === record.appId)
       if (target === undefined) {
         AppointmentStore.fetchPatientAppointment(record.appId)
-          .then(() => setIsLoading(false))
+          .finally(() => setIsLoading(false))
       } else {
         setIsLoading(false)
       }
@@ -104,8 +106,8 @@ const LabTestPage: FC<PageProp> = () => {
         <CardContent>
           <Grid container direction='column' spacing={ 2 }>
             {
-              details.map(({ field, val }) =>
-                <Grid item container direction='row' xs={ 12 }>
+              details.map(({ field, val }, index) =>
+                <Grid key={ 'col-' + index } item container direction='row' xs={ 12 }>
                   <Grid item xs={ 12 } sm={ 4 }>
                     <Typography>{ field }</Typography>
                   </Grid>
@@ -117,6 +119,9 @@ const LabTestPage: FC<PageProp> = () => {
             }
           </Grid>
         </CardContent>
+        <CardActions>
+          <Button size="small" onClick={ () => history.push('/labTest/update') }><EditIcon />Edit</Button>
+        </CardActions>
       </Card>
 
     )
