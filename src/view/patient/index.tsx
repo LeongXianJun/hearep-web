@@ -133,25 +133,18 @@ const PatientPage: FC<PageProp> = () => {
 
     const requestAuthentication = () => {
       if (selectedPatient) {
-        Promise.resolve(
-          HealthRecordStore.setSelectedPatient(selectedPatient)
-        ).then(() => {
-          AccessPermissionStore.setRespond()
-          setOpen(false)
-          history.push('/patient/detail')
+        setIsSending(true)
+        Promise.all([
+          AccessPermissionStore.setRespond(),
+          AccessPermissionStore.requestAccess(selectedPatient.id, emergency, selectedPatient.authorizedUsers)
+        ]).catch(err => {
+          if (err.message.includes('did not set his/her authorized user')) {
+            setAccessError('No authorized user to permit the access.')
+          } else {
+            console.log(err)
+          }
+          setIsSending(false)
         })
-        // setIsSending(true)
-        // Promise.all([
-        //   AccessPermissionStore.setRespond(),
-        //   AccessPermissionStore.requestAccess(selectedPatient.id, emergency, selectedPatient.authorizedUsers)
-        // ]).catch(err => {
-        //   if (err.message.includes('did not set his/her authorized user')) {
-        //     setAccessError('No authorized user to permit the access.')
-        //   } else {
-        //     console.log(err)
-        //   }
-        //   setIsSending(false)
-        // })
       }
     }
 
