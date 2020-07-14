@@ -42,6 +42,21 @@ const AppointmentPage: FC<PageProp> = () => {
     }
   }, [ isReady, isLoading ])
 
+  // for dialog 
+  const [ byTimeData, setByTimeData ] = useState<Boolean[][]>([])
+  const [ isWorking, setIsWorking ] = useState([ ...Array(7) ].map(() => false))
+  const [ byNumberData, setByNumberData ] = useState<Date[][]>([])
+
+  useEffect(() => {
+    const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
+    setByNumberData(rows.map(() => [ ...Array(2) ].map(() => new Date())))
+  }, [])
+
+  useEffect(() => {
+    const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
+    setByTimeData(rows.map(() => [ ...Array(TimeInterval.length) ].map(() => false)))
+  }, [ TimeInterval ])
+
   const updateStatus = (id: string, patientId: string, status: 'Accepted' | 'Rejected') => () =>
     AppointmentStore.updateStatus({ id, patientId, status })
 
@@ -142,9 +157,6 @@ const AppointmentPage: FC<PageProp> = () => {
   function SetTimeslotDialog() {
     const rows = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ]
     const [ value, setValue ] = React.useState(0)
-    const [ byTimeData, setByTimeData ] = useState(rows.map(() => [ ...Array(TimeInterval.length) ].map(() => false)))
-    const [ isWorking, setIsWorking ] = useState([ ...Array(7) ].map(() => false))
-    const [ byNumberData, setByNumberData ] = useState(rows.map(() => [ ...Array(2) ].map(() => new Date())))
 
     const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
       setValue(newValue);
@@ -278,46 +290,50 @@ const AppointmentPage: FC<PageProp> = () => {
       return (
         <Table>
           <TableBody>
-            { rows.map((r, rindex) =>
-              <TableRow hover key={ 'tr-' + rindex }>
-                <TableCell>
-                  <Checkbox
-                    value={ isWorking[ rindex ] }
-                    onChange={ event => setWorking(rindex)(event.target.checked) }
-                    inputProps={ { 'aria-label': 'primary checkbox' } }
-                  />
-                </TableCell>
-                <TableCell>{ r }</TableCell>
-                <TableCell>
-                  <MuiPickersUtilsProvider utils={ DateFnsUtils }>
-                    <KeyboardTimePicker
-                      disableToolbar
-                      margin="normal"
-                      label='Start Time'
-                      value={ byNumberData[ rindex ][ 0 ] }
-                      onChange={ date => date && handleChange(rindex, 0)(date) }
-                      KeyboardButtonProps={ {
-                        'aria-label': 'change time',
-                      } }
-                    />
-                  </MuiPickersUtilsProvider>
-                </TableCell>
-                <TableCell>
-                  <MuiPickersUtilsProvider utils={ DateFnsUtils }>
-                    <KeyboardTimePicker
-                      disableToolbar
-                      margin="normal"
-                      label='End Time Date'
-                      value={ byNumberData[ rindex ][ 1 ] }
-                      onChange={ date => date && handleChange(rindex, 1)(date) }
-                      KeyboardButtonProps={ {
-                        'aria-label': 'change time',
-                      } }
-                    />
-                  </MuiPickersUtilsProvider>
-                </TableCell>
-              </TableRow>
-            ) }
+            {
+              byNumberData.length > 0
+                ? rows.map((r, rindex) =>
+                  <TableRow hover key={ 'tr-' + rindex }>
+                    <TableCell>
+                      <Checkbox
+                        value={ isWorking[ rindex ] }
+                        onChange={ event => setWorking(rindex)(event.target.checked) }
+                        inputProps={ { 'aria-label': 'primary checkbox' } }
+                      />
+                    </TableCell>
+                    <TableCell>{ r }</TableCell>
+                    <TableCell>
+                      <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                        <KeyboardTimePicker
+                          disableToolbar
+                          margin="normal"
+                          label='Start Time'
+                          value={ byNumberData[ rindex ][ 0 ] }
+                          onChange={ date => date && handleChange(rindex, 0)(date) }
+                          KeyboardButtonProps={ {
+                            'aria-label': 'change time',
+                          } }
+                        />
+                      </MuiPickersUtilsProvider>
+                    </TableCell>
+                    <TableCell>
+                      <MuiPickersUtilsProvider utils={ DateFnsUtils }>
+                        <KeyboardTimePicker
+                          disableToolbar
+                          margin="normal"
+                          label='End Time Date'
+                          value={ byNumberData[ rindex ][ 1 ] }
+                          onChange={ date => date && handleChange(rindex, 1)(date) }
+                          KeyboardButtonProps={ {
+                            'aria-label': 'change time',
+                          } }
+                        />
+                      </MuiPickersUtilsProvider>
+                    </TableCell>
+                  </TableRow>
+                )
+                : null
+            }
           </TableBody>
         </Table>
       )

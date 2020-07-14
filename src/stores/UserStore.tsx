@@ -33,9 +33,7 @@ class UserStore extends StoreBase {
         } else {
           throw new Error('No Instance ID token available. Request permission to generate one.')
         }
-      }).catch(err =>
-        window.localStorage.setItem('sentToServer', '0')
-      )
+      }).catch(err => { })
 
       if (this.isRegistering === false) {
         this.fetchUser().then(() => {
@@ -51,7 +49,7 @@ class UserStore extends StoreBase {
     }
   })
 
-  private setFirebaseUser = (firebaseUser: firebase.User) => this.firebaseUser = firebaseUser
+  setFirebaseUser = (firebaseUser: firebase.User) => this.firebaseUser = firebaseUser
 
   getToken = async () => await this.firebaseUser?.getIdToken()
 
@@ -136,6 +134,9 @@ class UserStore extends StoreBase {
         }).then(result => {
           if (result.errors) {
             throw new Error(result.errors)
+          } else {
+            this.user = new MedicalStaff({ id: result.docId, ...info, email: this.firebaseUser?.email })
+            this.trigger(UserStore.UserKey)
           }
         })
           .catch(err => Promise.reject(new Error(err.message)))

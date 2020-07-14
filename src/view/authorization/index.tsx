@@ -171,9 +171,14 @@ const AuthorizationPage: FC<PageProp> = () => {
       if (result) {
         setIsSubmitting(true)
         await AuthUtil.register(email, password)
-          .then(() => {
-            setIsSubmitting(false)
-            history.replace('/register')
+          .then(({ user }) => {
+            if (user) {
+              UserStore.setFirebaseUser(user)
+              setIsSubmitting(false)
+              history.replace('/register')
+            } else {
+              throw new Error("Registration Fail")
+            }
           })
           .catch(err => Promise.reject(err))
       } else {

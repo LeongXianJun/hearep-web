@@ -17,7 +17,6 @@ class NotificationStore extends StoreBase {
   messaging = firebase.messaging()
 
   unsubscribeOnTokenRefresh = this.messaging.onTokenRefresh(() => {
-    this.setTokenSentToServer(false)
     this.messaging.getToken().then(refreshedToken => {
       this.notification = []
       this.sendTokenToServer(refreshedToken)
@@ -43,40 +42,59 @@ class NotificationStore extends StoreBase {
     }
   })
 
-  sendTokenToServer = (currentToken: string) => {
-    if (window.localStorage.getItem('sentToServer') !== '1') {
-      this.getToken().then(async userToken => {
-        if (userToken) {
-          await fetch(CommonUtil.getURL() + '/user/device', {
-            method: 'PUT',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: qs.stringify({ userToken, deviceToken: currentToken })
-          }).then(response => {
-            if (response.ok) {
-              return response.json()
-            } else {
-              throw new Error(response.status + ': (' + response.statusText + ')')
-            }
-          }).then(result => {
-            if (result.errors) {
-              throw new Error(result.errors)
-            } else {
-              this.setTokenSentToServer(true)
-            }
-          })
-            .catch(err => Promise.reject(new Error(err.message)))
-        } else {
-          throw new Error('No Token Found')
-        }
-      })
-    }
-  }
+  sendTokenToServer = (currentToken: string) =>
+    this.getToken().then(async userToken => {
+      if (userToken) {
+        await fetch(CommonUtil.getURL() + '/user/device', {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: qs.stringify({ userToken, deviceToken: currentToken })
+        }).then(response => {
+          if (response.ok) {
+            return response.json()
+          } else {
+            throw new Error(response.status + ': (' + response.statusText + ')')
+          }
+        }).then(result => {
+          if (result.errors) {
+            throw new Error(result.errors)
+          }
+        })
+          .catch(err => Promise.reject(new Error(err.message)))
+      } else {
+        throw new Error('No Token Found')
+      }
+    })
 
-  setTokenSentToServer = (sent: boolean) =>
-    window.localStorage.setItem('sentToServer', sent ? '1' : '0')
+  removeToken = () =>
+    this.getToken().then(async userToken => {
+      if (userToken) {
+        await fetch(CommonUtil.getURL() + '/user/device/remove', {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: qs.stringify({ userToken })
+        }).then(response => {
+          if (response.ok) {
+            return response.json()
+          } else {
+            throw new Error(response.status + ': (' + response.statusText + ')')
+          }
+        }).then(result => {
+          if (result.errors) {
+            throw new Error(result.errors)
+          }
+        })
+          .catch(err => Promise.reject(new Error(err.message)))
+      } else {
+        throw new Error('No Token Found')
+      }
+    })
 
   static NotificationsKey = 'NotificationsKey'
   @autoSubscribeWithKey('NotificationsKey')

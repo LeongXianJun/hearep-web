@@ -9,8 +9,8 @@ import { withResubAutoSubscriptions } from 'resub'
 
 import './navbar.css'
 import { AuthUtil } from '../../utils'
-import { UserStore } from '../../stores'
 import { title, icon } from '../../resources/logo'
+import { UserStore, NotificationStore } from '../../stores'
 import { maleAvatar, femaleAvatar } from '../../resources/images'
 
 const links: LinkRoute[] = [
@@ -54,7 +54,10 @@ const NavBar: FC<ComponentProp> = () => {
   }
 
   const logout = () =>
-    AuthUtil.signOut()
+    NotificationStore.removeToken()
+      .then(async () => {
+        await AuthUtil.signOut()
+      })
       .then(() => {
         history.replace('/login')
       })

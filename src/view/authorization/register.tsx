@@ -108,8 +108,6 @@ const RegisterInfoPage: FC<PageProp> = () => {
             'department': ''
           })
         )
-      })
-      .finally(() => {
         setIsSubmitting(false)
       })
   }
