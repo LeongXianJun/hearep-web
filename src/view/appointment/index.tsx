@@ -1,5 +1,4 @@
 import React, { useState, FC, useEffect } from 'react'
-import { AppContainer, AppExpansion, AppTabPanel } from '../common'
 import {
   TextField, InputAdornment, Typography, TableHead, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
@@ -14,6 +13,7 @@ import { Search as SearchIcon } from '@material-ui/icons'
 import { MuiPickersUtilsProvider, KeyboardTimePicker } from '@material-ui/pickers'
 
 import { UserStore, AppointmentStore, WorkingTimeStore } from '../../stores'
+import { AppContainer, AppExpansion, AppTabPanel, ReloadButton } from '../common'
 
 interface PageProp {
 
@@ -30,14 +30,23 @@ const AppointmentPage: FC<PageProp> = () => {
   const [ filter, setFilter ] = useState('')
   const [ timeslotOpen, setTimeslotOpen ] = useState(false)
   const [ isLoading, setIsLoading ] = useState(true)
+  const [ isFetching, setIsFetching ] = useState(false)
+
+  const onLoad = () => {
+    setIsFetching(true)
+    return Promise.all([
+      UserStore.fetchAllPatients(),
+      AppointmentStore.fetchAllAppointments(),
+      WorkingTimeStore.fetchTimeInterval()
+    ]).then(() => {
+      setIsFetching(false)
+    })
+      .catch(err => console.log(err))
+  }
 
   useEffect(() => {
     if (isReady && isLoading) {
-      Promise.all([
-        UserStore.fetchAllPatients(),
-        AppointmentStore.fetchAllAppointments(),
-        WorkingTimeStore.fetchTimeInterval()
-      ]).catch(err => console.log(err))
+      onLoad()
         .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
@@ -63,8 +72,9 @@ const AppointmentPage: FC<PageProp> = () => {
   return (
     <AppContainer isLoading={ isLoading }>
       <Grid container spacing={ 2 }>
-        <Grid item xs={ 12 } sm={ 8 }>
+        <Grid item xs={ 12 } sm={ 8 } container direction='row'>
           <Typography variant='h2'>{ 'Appointments' }</Typography>
+          <ReloadButton isSubmitting={ isFetching } onClick={ () => { onLoad() } } />
         </Grid>
         <Grid item container xs={ 12 } sm={ 1 } alignContent='center' justify='center'>
           <NavLink to='/appointment/history'>{ 'History' }</NavLink>

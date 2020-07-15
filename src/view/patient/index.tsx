@@ -9,7 +9,7 @@ import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 import { Search as SearchIcon } from '@material-ui/icons'
 
-import { AppContainer } from '../common'
+import { AppContainer, ReloadButton } from '../common'
 import { maleAvatar, femaleAvatar } from '../../resources/images'
 import { UserStore, Patient, HealthRecordStore, AccessPermissionStore } from '../../stores'
 
@@ -31,11 +31,18 @@ const PatientPage: FC<PageProp> = () => {
   const [ open, setOpen ] = useState(false)
   const [ isSending, setIsSending ] = useState(false)
   const [ isLoading, setIsLoading ] = useState(true)
+  const [ isFetching, setIsFetching ] = useState(false)
   const [ accessError, setAccessError ] = useState('')
+
+  const onLoad = () => {
+    setIsFetching(true)
+    return UserStore.fetchAllPatients()
+      .then(() => setIsFetching(false))
+  }
 
   useEffect(() => {
     if (isReady && isLoading) {
-      UserStore.fetchAllPatients()
+      onLoad()
         .finally(() => setIsLoading(false))
     }
 
@@ -67,7 +74,10 @@ const PatientPage: FC<PageProp> = () => {
 
   return (
     <AppContainer isLoading={ isLoading }>
-      <Typography variant='h2' gutterBottom>{ 'Patient' }</Typography>
+      <Grid container direction='row'>
+        <Typography variant='h2' gutterBottom>{ 'Patient' }</Typography>
+        <ReloadButton isSubmitting={ isFetching } onClick={ () => { onLoad() } } />
+      </Grid>
       {/* Search Bar */ }
       <TextField
         label='Search'

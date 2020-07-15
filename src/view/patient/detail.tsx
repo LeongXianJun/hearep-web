@@ -1,5 +1,4 @@
-import React, { FC, useEffect, useState } from 'react'
-import { AppContainer, AppExpansion, LineGraph } from '../common'
+import React, { FC, useEffect, useState, useCallback } from 'react'
 import {
   Grid, Breadcrumbs, Link, Typography, TableBody,
   Table, TableRow, TableCell, Button, TableHead
@@ -7,11 +6,12 @@ import {
 import { useHistory } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 
-import { maleAvatar, femaleAvatar } from '../../resources/images'
 import {
   UserStore, HealthRecordStore, Patient, AppointmentStore,
   Appointment, HealthRecord, HealthAnalysisStore
 } from '../../stores'
+import { maleAvatar, femaleAvatar } from '../../resources/images'
+import { AppContainer, AppExpansion, LineGraph, ReloadButton } from '../common'
 
 interface PageProp {
 
@@ -28,6 +28,22 @@ const PatientDetailPage: FC<PageProp> = () => {
   const Accepted = appointments.Accepted.filter(app => app.patientId === patient?.id)
 
   const [ isLoading, setIsLoading ] = useState(true)
+  const [ isFetching, setIsFetching ] = useState(false)
+
+  const onLoad = useCallback(() => {
+    setIsFetching(true)
+    return Promise.all(patient
+      ? [
+        HealthRecordStore.fetchPatientRecords(patient.id),
+        HealthAnalysisStore.fetchHealthAnalysis(patient.id),
+        AppointmentStore.fetchAllAppointments()
+      ]
+      : []
+    ).then(() => setIsFetching(false))
+      .catch(err => {
+        console.log(err)
+      })
+  }, [ patient ])
 
   useEffect(() => {
     if (isReady && patient === undefined) {
@@ -36,16 +52,11 @@ const PatientDetailPage: FC<PageProp> = () => {
   }, [ patient, isReady, history ])
 
   useEffect(() => {
-    if (isReady && isLoading && patient) {
-      Promise.all([
-        HealthRecordStore.fetchPatientRecords(patient.id),
-        HealthAnalysisStore.fetchHealthAnalysis(patient.id),
-        AppointmentStore.fetchAllAppointments()
-      ]).catch(err => {
-        console.log(err)
-      }).finally(() => setIsLoading(false))
+    if (isReady && isLoading) {
+      onLoad()
+        .finally(() => setIsLoading(false))
     }
-  }, [ isReady, isLoading, patient ])
+  }, [ isReady, isLoading, onLoad ])
 
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
@@ -79,7 +90,7 @@ const PatientDetailPage: FC<PageProp> = () => {
 
   return (
     <AppContainer isLoading={ isLoading }>
-      <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
+      <Breadcrumbs maxItems={ 4 } aria-label="breadcrumb">
         {
           breadcrumbs.map(({ path, text }, index, arr) => (
             index === arr.length - 1
@@ -89,6 +100,7 @@ const PatientDetailPage: FC<PageProp> = () => {
               </Link>
           ))
         }
+        <ReloadButton isSubmitting={ isFetching } onClick={ () => { onLoad() } } size='small' />
       </Breadcrumbs>
       <Grid container direction='row' justify='center' spacing={ 3 } style={ { marginTop: 5 } }>
         <Grid item xs={ 12 } md={ 6 }>

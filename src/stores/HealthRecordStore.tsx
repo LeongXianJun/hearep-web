@@ -1,6 +1,7 @@
 import qs from 'qs'
 import { CommonUtil } from '../utils'
 import UserStore, { Patient } from './UserStore'
+import AppointmentStore from './AppointmentStore'
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub'
 
 @AutoSubscribeStore
@@ -78,6 +79,7 @@ class HealthRecordStore extends StoreBase {
           } else if (result[ 'response' ].includes('success')) {
             if (this.selectedRecord?.type === 'Health Prescription' && input.type === 'Medication Record') {
               this.selectedRecord = { ...this.selectedRecord, medicationRecords: [ ...this.selectedRecord.medicationRecords, new MedicationRecord({ id: result.docId, ...input }) ] }
+              AppointmentStore.setSelectedAppointment(undefined)
               this.trigger(HealthRecordStore.SelectedRecordKey)
             }
             return { hrid: result.docId }

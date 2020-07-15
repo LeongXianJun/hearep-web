@@ -36,7 +36,7 @@ const LineGraph: FC<ComponentProps> = ({ data, color = 'tomato', showSymbol, yLa
               data: { stroke: color }
             } }
             data={ data }
-            labels={ ({ datum }) => (yLabel ? yLabel + ': ' : '') + datum.y }
+            labels={ ({ datum }) => (yLabel ? yLabel + ': ' : '') + (datum.y as number).toPrecision(3) }
             labelComponent={
               <VictoryTooltip
                 style={ { fill: color, fontSize: '10px' } }

@@ -15,3 +15,6 @@ export * from './LineGraph'
 
 export { default as LineGraphWithZoom } from './LineGraphwithZoom'
 export * from './LineGraphwithZoom'
+
+export { default as ReloadButton } from './ReloadButton'
+export * from './ReloadButton'

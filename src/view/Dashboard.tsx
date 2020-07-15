@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from 'react'
-import { AppContainer, AppExpansion, LineGraphWithZoom } from './common'
+import { AppContainer, AppExpansion, LineGraphWithZoom, ReloadButton } from './common'
 import {
   Grid, CardContent, Card, CardHeader, Table,
   TableBody, TableRow, TableCell, Typography
@@ -20,14 +20,24 @@ const Dashboard: FC<PageProp> = () => {
   const { HandledApp, NewApp, AverageWaitingTime } = performanceAnalysis
 
   const [ isLoading, setIsLoading ] = useState(true)
+  const [ isFetching, setIsFetching ] = useState(false)
+
+  const onLoad = () => {
+    setIsFetching(true)
+    return Promise.all([
+      UserStore.fetchAllPatients(),
+      AppointmentStore.fetchAllAppointments(),
+      AnalysisStore.fetchPerformanceAnalysis()
+    ]).then(() => setIsFetching(false))
+      .catch(err => {
+        setIsFetching(false)
+        console.log(err)
+      })
+  }
 
   useEffect(() => {
     if (isReady && isLoading) {
-      Promise.all([
-        UserStore.fetchAllPatients(),
-        AppointmentStore.fetchAllAppointments(),
-        AnalysisStore.fetchPerformanceAnalysis()
-      ]).catch(err => console.log(err))
+      onLoad()
         .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
@@ -54,7 +64,12 @@ const Dashboard: FC<PageProp> = () => {
         <Grid item xs={ 12 } sm={ 8 } lg={ 9 } style={ { width: '100%', height: '100%' } }>
           <Card>
             <CardHeader
-              title='Performance Analysis'
+              title={
+                <Grid container direction='row'>
+                  <Typography variant='h4'>Performance Analysis</Typography>
+                  <ReloadButton isSubmitting={ isFetching } onClick={ () => { onLoad() } } />
+                </Grid>
+              }
             />
             <CardContent>
               {

@@ -1,5 +1,4 @@
 import React, { FC, useState, useEffect } from 'react'
-import { AppContainer, AppExpansion } from '../common'
 import {
   Typography, Grid, Table, TableBody, TableRow,
   TableCell, Fab, useTheme, Avatar
@@ -10,6 +9,7 @@ import { withResubAutoSubscriptions } from 'resub'
 import UpdateDialog from './update'
 import { CommonUtil } from '../../utils'
 import { maleAvatar, femaleAvatar } from '../../resources/images'
+import { AppContainer, AppExpansion, ReloadButton } from '../common'
 import { UserStore, MedicalStaff, WorkingTimeStore, ByTimeWT, ByNumberWT } from '../../stores'
 
 interface PageProp {
@@ -21,9 +21,16 @@ const ProfilePage: FC<PageProp> = () => {
   const user = UserStore.getUser()
   const isReady = UserStore.ready()
   const TimeInterval = WorkingTimeStore.getTimeInterval()
-  const [ isLoading, setIsLoading ] = useState(true)
 
+  const [ isLoading, setIsLoading ] = useState(true)
+  const [ isFetching, setIsFetching ] = useState(false)
   const [ open, setOpen ] = useState(false)
+
+  const onLoad = () => {
+    setIsFetching(true)
+    return UserStore.fetchUser()
+      .then(() => setIsFetching(false))
+  }
 
   useEffect(() => {
     return UserStore.unsubscribe
@@ -43,8 +50,9 @@ const ProfilePage: FC<PageProp> = () => {
           <Grid item>
             <Avatar style={ { margin: 'auto', display: 'block', width: theme.spacing(20), height: theme.spacing(20) } } alt='num' src={ user?.gender === 'F' ? femaleAvatar : maleAvatar } />
           </Grid>
-          <Grid item>
+          <Grid item container direction='row' justify='center'>
             <Typography variant='h4' align='center'>{ user?.username }</Typography>
+            <ReloadButton isSubmitting={ isFetching } onClick={ () => { onLoad() } } />
           </Grid>
         </Grid>
         <Grid item container direction='row' spacing={ 3 } xs={ 12 } justify='center' alignContent='center' >

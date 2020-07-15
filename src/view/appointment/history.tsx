@@ -1,5 +1,4 @@
 import React, { FC, useState, useEffect } from 'react'
-import { AppContainer } from '../common'
 import {
   TextField, InputAdornment, Typography, TableHead, CardHeader,
   Card, CardContent, Grid, Table, TableBody,
@@ -9,6 +8,7 @@ import { NavLink } from 'react-router-dom'
 import { withResubAutoSubscriptions } from 'resub'
 import { Search as SearchIcon } from '@material-ui/icons'
 
+import { AppContainer, ReloadButton } from '../common'
 import { UserStore, AppointmentStore } from '../../stores'
 
 interface PageProp {
@@ -23,13 +23,20 @@ const AppointmentHistory: FC<PageProp> = () => {
 
   const [ filter, setFilter ] = useState('')
   const [ isLoading, setIsLoading ] = useState(true)
+  const [ isFetching, setIsFetching ] = useState(false)
+
+  const onLoad = () => {
+    setIsFetching(true)
+    return Promise.all([
+      UserStore.fetchAllPatients(),
+      AppointmentStore.fetchAllAppointments()
+    ]).catch(err => console.log(err))
+      .then(() => setIsFetching(false))
+  }
 
   useEffect(() => {
     if (isReady && isLoading) {
-      Promise.all([
-        UserStore.fetchAllPatients(),
-        AppointmentStore.fetchAllAppointments()
-      ]).catch(err => console.log(err))
+      onLoad()
         .finally(() => setIsLoading(false))
     }
   }, [ isReady, isLoading ])
@@ -37,12 +44,12 @@ const AppointmentHistory: FC<PageProp> = () => {
   const breadcrumbs = [
     { path: '/dashboard', text: 'Home' },
     { path: '/appointment', text: 'Appointment' },
-    { path: '/patient/history', text: 'History' }
+    { path: '/appointment/history', text: 'History' }
   ]
 
   return (
     <AppContainer isLoading={ isLoading }>
-      <Breadcrumbs maxItems={ 3 } aria-label="breadcrumb">
+      <Breadcrumbs maxItems={ 4 } aria-label="breadcrumb">
         {
           breadcrumbs.map(({ path, text }, index, arr) => (
             index === arr.length - 1
@@ -52,6 +59,7 @@ const AppointmentHistory: FC<PageProp> = () => {
               </NavLink>
           ))
         }
+        <ReloadButton size='small' isSubmitting={ isFetching } onClick={ () => { onLoad() } } />
       </Breadcrumbs>
       <Card style={ { marginTop: 5 } }>
         <CardHeader

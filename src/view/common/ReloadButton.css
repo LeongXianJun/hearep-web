@@ -1,0 +1,15 @@
+/* add animation to the reload button */
+@media (prefers-reduced-motion: no-preference) {
+  .reload-button {
+    animation: reload-button-ani infinite 0.75s both;
+  }
+}
+
+@keyframes reload-button-ani {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}

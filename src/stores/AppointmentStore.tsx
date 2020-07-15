@@ -173,8 +173,9 @@ class AppointmentStore extends StoreBase {
     return this.patientAppointment
   }
 
-  setSelectedAppointment(app: Appointment) {
+  setSelectedAppointment(app: Appointment | undefined) {
     this.selectedAppointment = app
+    this.trigger(AppointmentStore.SelectedAppointmentKey)
   }
 
   upApp(targetApp: Appointment, from: Appointment[ 'status' ], to: Appointment[ 'status' ]) {
